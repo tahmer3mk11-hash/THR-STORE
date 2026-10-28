@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>متجر البطاقات الرقمية | تسليم فوري</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+  body { background: #0f1220; color: #fff; }
+
+  /* Header */
+  header {
+    background: #161a2e; padding: 15px 25px;
+    display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid #2a2f4a;
+  }
+  .logo { font-size: 22px; font-weight: bold; color: #6c5ce7; }
+  .cart-btn {
+    background: #6c5ce7; color: #fff; border: none;
+    padding: 10px 18px; border-radius: 8px; cursor: pointer;
+    font-size: 15px;
+  }
+  .cart-btn:hover { background: #5a4bd1; }
+
+  /* Hero */
+  .hero {
+    text-align: center; padding: 60px 20px;
+    background: linear-gradient(135deg, #1a1f3a, #0f1220);
+  }
+  .hero h1 { font-size: 36px; margin-bottom: 12px; }
+  .hero p { color: #9aa0c0; font-size: 17px; }
+
+  /* Products */
+  .products {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px; padding: 40px 25px; max-width: 1200px; margin: auto;
+  }
+  .card {
+    background: #161a2e; border: 1px solid #2a2f4a;
+    border-radius: 14px; padding: 20px; text-align: center;
+    transition: 0.2s;
+  }
+  .card:hover { transform: translateY(-5px); border-color: #6c5ce7; }
+  .card .icon { font-size: 45px; margin-bottom: 12px; }
+  .card h3 { font-size: 17px; margin-bottom: 8px; }
+  .card .price { color: #6c5ce7; font-weight: bold; font-size: 19px; margin: 10px 0; }
+  .card button {
+    width: 100%; background: #6c5ce7; color: #fff;
+    border: none; padding: 10px; border-radius: 8px;
+    cursor: pointer; font-size: 14px;
+  }
+  .card button:hover { background: #5a4bd1; }
+
+  /* Cart Sidebar */
+  .cart-panel {
+    position: fixed; top: 0; left: -400px; width: 380px; height: 100%;
+    background: #161a2e; z-index: 200; padding: 25px;
+    transition: 0.3s; overflow-y: auto;
+    border-right: 1px solid #2a2f4a;
+  }
+  .cart-panel.open { left: 0; }
+  .cart-panel h2 { margin-bottom: 20px; }
+  .cart-item {
+    display: flex; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid #2a2f4a;
+  }
+  .cart-item .remove { color: #ff6b6b; cursor: pointer; }
+  .cart-total {
+    margin-top: 20px; font-size: 20px; font-weight: bold;
+    display: flex; justify-content: space-between;
+  }
+  .checkout {
+    width: 100%; background: #00b894; color: #fff;
+    border: none; padding: 14px; border-radius: 8px;
+    margin-top: 20px; font-size: 16px; cursor: pointer;
+  }
+  .checkout:hover { background: #009e7e; }
+  .close-cart { float: left; cursor: pointer; color: #9aa0c0; font-size: 22px; }
+  .empty { color: #9aa0c0; text-align: center; padding: 30px 0; }
+
+  /* Footer */
+  footer {
+    text-align: center; padding: 30px;
+    color: #6a7090; font-size: 14px;
+    border-top: 1px solid #2a2f4a; margin-top: 40px;
+  }
+
+  @media (max-width: 500px) {
+    .cart-panel { width: 100%; }
+    .hero h1 { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚡ CardStore</div>
+  <button class="cart-btn" onclick="toggleCart()">
+    🛒 السلة (<span id="count">0</span>)
+  </button>
+</header>
+
+<section class="hero">
+  <h1>بطاقات رقمية • تسليم فوري</h1>
+  <p>شدات ببجي، بطاقات جوجل بلاي، اشتراكات، وأكثر</p>
+</section>
+
+<section class="products" id="products"></section>
+
+<!-- Cart Panel -->
+<div class="cart-panel" id="cartPanel">
+  <span class="close-cart" onclick="toggleCart()">✕</span>
+  <h2>🛒 سلة المشتريات</h2>
+  <div id="cartItems"></div>
+  <div class="cart-total">
+    <span>الإجمالي:</span>
+    <span id="total">0 ر.س</span>
+  </div>
+  <button class="checkout" onclick="checkout()">إتمام الطلب</button>
+</div>
+
+<footer>
+  © 2025 CardStore — جميع الحقوق محفوظة
+</footer>
+
+<script>
+// المنتجات
+const products = [
+  { id: 1, name: "ببجي 660 UC", price: 38, icon: "🎮" },
+  { id: 2, name: "ببجي 1800 UC", price: 95, icon: "🎮" },
+  { id: 3, name: "جوجل بلاي 50$", price: 185, icon: "🎁" },
+  { id: 4, name: "آيتونز 25$", price: 98, icon: "🍎" },
+  { id: 5, name: "نتفليكس شهر", price: 45, icon: "🎬" },
+  { id: 6, name: "سبوتيفاي شهر", price: 25, icon: "🎵" },
+  { id: 7, name: "ستيم 20$", price: 78, icon: "💻" },
+  { id: 8, name: "بلايستيشن Plus", price: 120, icon: "🕹️" }
+];
+
+let cart = [];
+
+// عرض المنتجات
+const productsDiv = document.getElementById('products');
+products.forEach(p => {
+  productsDiv.innerHTML += `
+    <div class="card">
+      <div class="icon">${p.icon}</div>
+      <h3>${p.name}</h3>
+      <div class="price">${p.price} ر.س</div>
+      <button onclick="addToCart(${p.id})">أضف للسلة</button>
+    </div>
+  `;
+});
+
+// إضافة للسلة
+function addToCart(id) {
+  const product = products.find(p => p.id === id);
+  const existing = cart.find(item => item.id === id);
+  if (existing) {
+    existing.qty++;
+  } else {
+    cart.push({ ...product, qty: 1 });
+  }
+  renderCart();
+  toggleCart();
+}
+
+// عرض السلة
+function renderCart() {
+  const itemsDiv = document.getElementById('cartItems');
+  const countSpan = document.getElementById('count');
+  const totalSpan = document.getElementById('total');
+
+  if (cart.length === 0) {
+    itemsDiv.innerHTML = '<div class="empty">السلة فارغة</div>';
+    countSpan.textContent = 0;
+    totalSpan.textContent = '0 ر.س';
+    return;
+  }
+
+  let html = '';
+  let total = 0;
+  cart.forEach(item => {
+    total += item.price * item.qty;
+    html += `
+      <div class="cart-item">
+        <div>
+          <strong>${item.name}</strong><br>
+          <small>${item.price} ر.س × ${item.qty}</small>
+        </div>
+        <span class="remove" onclick="removeFromCart(${item.id})">حذف</span>
+      </div>
+    `;
+  });
+  itemsDiv.innerHTML = html;
+  countSpan.textContent = cart.reduce((s, i) => s + i.qty, 0);
+  totalSpan.textContent = total + ' ر.س';
+}
+
+// حذف من السلة
+function removeFromCart(id) {
+  cart = cart.filter(item => item.id !== id);
+  renderCart();
+}
+
+// فتح/إغلاق السلة
+function toggleCart() {
+  document.getElementById('cartPanel').classList.toggle('open');
+}
+
+// إتمام الطلب
+function checkout() {
+  if (cart.length === 0) {
+    alert('السلة فارغة!');
+    return;
+  }
+  alert('سيتم تحويلك لبوابة الدفع...\n(هنا تضع رابط بوابة الدفع مثل Moyasar أو Tap)');
+  // مثال: window.location.href = 'https://checkout.example.com';
+}
+</script>
+
+</body>
+</html>
