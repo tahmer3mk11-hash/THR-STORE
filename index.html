@@ -32,13 +32,15 @@
   .cart-item { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f1f2f6; }
   .cart-total { margin-top: 20px; font-size: 22px; font-weight: 900; display: flex; justify-content: space-between; border-top: 2px solid #f1f2f6; padding-top: 20px; }
   .checkout { width: 100%; background: var(--primary); color: #fff; border: none; padding: 16px; border-radius: 12px; margin-top: 20px; font-size: 18px; cursor: pointer; }
+  
   .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 300; display: none; justify-content: center; align-items: center; }
   .modal-overlay.active { display: flex; }
   .modal { background: #fff; padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; text-align: center; max-height: 90vh; overflow-y: auto; }
   .modal h3 { color: var(--primary); font-size: 24px; margin-bottom: 15px; }
-  .modal input, .modal select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #dfe6e9; border-radius: 8px; }
-  .btn-close { background: var(--success); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; }
-  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--text); color: white; padding: 15px 25px; border-radius: 8px; z-index: 400; transform: translateY(100px); opacity: 0; transition: 0.3s; }
+  .modal input, .modal select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #dfe6e9; border-radius: 8px; font-family: 'Tajawal'; }
+  .btn-close { background: var(--success); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; font-weight: bold; }
+  
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--text); color: white; padding: 15px 25px; border-radius: 8px; z-index: 400; transform: translateY(100px); opacity: 0; transition: 0.3s; font-weight: bold;}
   .toast.show { transform: translateY(0); opacity: 1; }
 </style>
 </head>
@@ -56,6 +58,7 @@
 
 <div id="store-container"></div>
 
+<!-- السلة -->
 <div class="cart-panel" id="cartPanel">
   <h2>سلة المشتريات</h2>
   <div class="cart-items-container" id="cartItems"></div>
@@ -63,6 +66,7 @@
   <button class="checkout" onclick="openCheckout()">إتمام الطلب</button>
 </div>
 
+<!-- نافذة الدفع -->
 <div class="modal-overlay" id="checkoutModal">
   <div class="modal">
     <h3>إتمام الطلب</h3>
@@ -72,40 +76,68 @@
   </div>
 </div>
 
+<!-- نافذة نجاح الدفع -->
 <div class="modal-overlay" id="successModal">
-  <div class="modal"><h3>تم بنجاح!</h3><p id="deliveryCode"></p><button class="btn-close" onclick="document.getElementById('successModal').classList.remove('active')">إغلاق</button></div>
+  <div class="modal">
+    <h3 style="color:var(--success);">تم بنجاح!</h3>
+    <p style="margin-bottom: 20px;">هذا كود البطاقة الخاص بك:</p>
+    <div id="deliveryCode" style="background:#f1f2f6; padding:15px; border-radius:8px; font-family:monospace; font-size:20px; font-weight:bold; margin-bottom:20px; border:2px dashed var(--primary);"></div>
+    <button class="btn-close" onclick="document.getElementById('successModal').classList.remove('active')">إغلاق</button>
+  </div>
 </div>
 
-<div class="modal-overlay" id="adminModal">
+<!-- نافذة تسجيل الدخول للإدارة -->
+<div class="modal-overlay" id="loginModal">
   <div class="modal">
-    <h3>بوابة الإدارة</h3>
+    <h3><i class="fa-solid fa-lock"></i> تسجيل الدخول</h3>
+    <p style="margin-bottom: 15px; color: #636e72;">أدخل بيانات المدير للدخول</p>
+    <input type="text" id="adminUser" placeholder="اسم المستخدم">
+    <input type="password" id="adminPass" placeholder="كلمة المرور">
+    <button class="btn-close" onclick="checkLogin()">دخول</button>
+  </div>
+</div>
+
+<!-- لوحة الإدارة -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal" style="text-align: right;">
+    <h3 style="text-align: center;"><i class="fa-solid fa-user-gear"></i> بوابة الإدارة</h3>
+    <hr style="margin-bottom: 20px; border: 0; border-top: 1px solid #eee;">
+    
     <input type="text" id="newName" placeholder="اسم المنتج">
-    <input type="number" id="newPrice" placeholder="السعر">
-    <button class="btn-close" onclick="addProductAdmin()">إضافة</button>
-    <div id="adminList" style="margin-top:15px; text-align:right;"></div>
+    <input type="number" id="newPrice" placeholder="السعر بالريال">
+    <input type="text" id="newImg" placeholder="رابط الصورة (URL)">
+    <button class="btn-close" onclick="addProductAdmin()" style="margin-bottom: 20px;"><i class="fa-solid fa-plus"></i> إضافة المنتج</button>
+    
+    <h4 style="margin-bottom: 10px;">المنتجات الحالية:</h4>
+    <div id="adminList" style="max-height: 200px; overflow-y: auto; background: #f9f9f9; border-radius: 8px; padding: 10px; margin-bottom: 20px;"></div>
+    
+    <button class="btn-close" style="background: #ff4757;" onclick="logoutAdmin()">تسجيل الخروج</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
+// بيانات المنتجات الأساسية
 let categories = JSON.parse(localStorage.getItem('cardStoreData')) || [
   { title: "🎮 شحن الألعاب", items: [{id:1, name:"ببجي 660", price:38, img:"https://upload.wikimedia.org/wikipedia/en/thumb/4/44/PlayerUnknown%27s_Battlegrounds_Mobile_Logo.png/220px-PlayerUnknown%27s_Battlegrounds_Mobile_Logo.png"}] },
   { title: "🎁 بطاقات الهدايا", items: [{id:2, name:"جوجل بلاي 50$", price:185, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Google_Play_Store_badge_EN.svg/220px-Google_Play_Store_badge_EN.svg.png"}] }
 ];
 let cart = [];
 
+// عرض المتجر
 function renderStore() {
   const c = document.getElementById('store-container'); c.innerHTML = '';
   categories.forEach(cat => {
     let h = `<h2 class="section-title">${cat.title}</h2><section class="products">`;
     cat.items.forEach(p => {
-      h += `<div class="card"><img src="${p.img}"><div class="card-content"><h3>${p.name}</h3><div class="price">${p.price} ر.س</div><button onclick="addToCart(${p.id})">أضف</button></div></div>`;
+      h += `<div class="card"><img src="${p.img}" onerror="this.src='https://via.placeholder.com/150x100?text=No+Image'"><div class="card-content"><h3>${p.name}</h3><div class="price">${p.price} ر.س</div><button onclick="addToCart(${p.id})">أضف</button></div></div>`;
     });
     c.innerHTML += h + `</section>`;
   });
 }
 
+// السلة
 function addToCart(id) {
   let p = null;
   categories.forEach(c => c.items.forEach(i => { if(i.id === id) p = i; }));
@@ -125,36 +157,82 @@ function updateCart() {
 
 function toggleCart() { document.getElementById('cartPanel').classList.toggle('open'); }
 function openCheckout() { if(!cart.length) return; document.getElementById('checkoutModal').classList.add('active'); }
-function processPayment() { document.getElementById('checkoutModal').classList.remove('active'); document.getElementById('deliveryCode').innerText = "CARD-XXXX-XXXX"; document.getElementById('successModal').classList.add('active'); cart = []; updateCart(); }
+function processPayment() { 
+  if(!document.getElementById('custName').value) return alert('أدخل اسمك');
+  document.getElementById('checkoutModal').classList.remove('active'); 
+  document.getElementById('deliveryCode').innerText = "CARD-" + Math.floor(Math.random()*10000) + "-" + Math.floor(Math.random()*10000); 
+  document.getElementById('successModal').classList.add('active'); 
+  cart = []; updateCart(); 
+}
+
+// التنبيهات
 function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2000); }
 
+// --- حركة الـ 5 ضغطات ---
 let clicks = 0;
 document.getElementById('secretLogo').onclick = () => {
   clicks++;
-  if(clicks === 5) { document.getElementById('adminModal').classList.add('active'); renderAdmin(); clicks = 0; }
+  if(clicks === 5) { 
+    document.getElementById('loginModal').classList.add('active'); 
+    clicks = 0; 
+  }
 };
 
+// --- التحقق من تسجيل الدخول ---
+function checkLogin() {
+  const user = document.getElementById('adminUser').value;
+  const pass = document.getElementById('adminPass').value;
+  
+  if(user === 'THAMER133' && pass === 'TtHh112233445566') {
+    document.getElementById('loginModal').classList.remove('active');
+    document.getElementById('adminModal').classList.add('active');
+    renderAdmin();
+    // تفريغ الحقول
+    document.getElementById('adminUser').value = '';
+    document.getElementById('adminPass').value = '';
+  } else {
+    alert('خطأ في اسم المستخدم أو كلمة المرور!');
+  }
+}
+
+function logoutAdmin() {
+  document.getElementById('adminModal').classList.remove('active');
+}
+
+// --- لوحة الإدارة ---
 function renderAdmin() {
   let h = '';
-  categories.forEach(c => c.items.forEach(i => h += `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${i.name}</span><button onclick="del(${i.id})" style="color:red; background:none; border:none; cursor:pointer;">حذف</button></div>`));
+  categories.forEach(c => c.items.forEach(i => h += `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid #eee; padding-bottom:5px;"><span>${i.name} - ${i.price} ر.س</span><button onclick="del(${i.id})" style="color:red; background:none; border:none; cursor:pointer;"><i class="fa-solid fa-trash"></i></button></div>`));
   document.getElementById('adminList').innerHTML = h;
 }
 
 function addProductAdmin() {
   const n = document.getElementById('newName').value;
   const p = document.getElementById('newPrice').value;
-  if(!n || !p) return;
-  categories[0].items.push({id: Date.now(), name: n, price: p, img: "https://via.placeholder.com/150"});
+  const img = document.getElementById('newImg').value || 'https://via.placeholder.com/150x100?text=No+Image';
+  
+  if(!n || !p) return alert('أدخل اسم المنتج والسعر');
+  
+  categories[0].items.push({id: Date.now(), name: n, price: p, img: img});
   localStorage.setItem('cardStoreData', JSON.stringify(categories));
   renderStore(); renderAdmin();
+  
+  // تفريغ الحقول
+  document.getElementById('newName').value = '';
+  document.getElementById('newPrice').value = '';
+  document.getElementById('newImg').value = '';
+  showToast('تم إضافة المنتج بنجاح!');
 }
 
 function del(id) {
+  if(!confirm('هل تريد حذف هذا المنتج؟')) return;
   categories.forEach(c => c.items = c.items.filter(i => i.id !== id));
   localStorage.setItem('cardStoreData', JSON.stringify(categories));
   renderStore(); renderAdmin();
+  showToast('تم الحذف!');
 }
 
+// التشغيل
 renderStore(); updateCart();
 </script>
 </body>
