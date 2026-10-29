@@ -33,10 +33,10 @@
   .hero h1 { font-size: 40px; margin-bottom: 15px; font-weight: 900; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
   .hero p { font-size: 18px; color: var(--text-muted); }
   
-  /* Products */
+  /* Products Grid */
   .section-title { max-width: 1200px; margin: 40px auto 10px; padding: 0 25px; font-size: 26px; font-weight: 900; color: var(--text); border-right: 4px solid var(--primary); padding-right: 15px;}
   .products { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 25px; padding: 20px 25px 40px; max-width: 1200px; margin: auto; }
-  .card { background: var(--surface); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.4); display: flex; flex-direction: column; transition: 0.3s; border: 1px solid #333; }
+  .card { background: var(--surface); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.4); display: flex; flex-direction: column; transition: 0.3s; border: 1px solid #333; cursor: pointer;}
   .card:hover { transform: translateY(-8px); border-color: var(--primary); box-shadow: 0 12px 25px rgba(142, 68, 173, 0.3); }
   .card img { width: 100%; height: 150px; object-fit: contain; background: #2a2a2a; padding: 20px; }
   .card-content { padding: 20px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; }
@@ -44,8 +44,60 @@
   .card button { margin-top: auto; width: 100%; background: var(--success); color: #fff; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s;}
   .card button:hover { background: #009e7e; transform: scale(1.02); }
   
+  /* Product Page (Full Screen) */
+  #productPage {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--bg); z-index: 500; overflow-y: auto;
+    display: none; flex-direction: column;
+  }
+  #productPage.active { display: flex; animation: fadeIn 0.3s; }
+  
+  .product-page-header {
+    background: var(--surface); padding: 15px 30px; display: flex; align-items: center;
+    position: sticky; top: 0; z-index: 501; box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  }
+  .back-btn { background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; margin-left: 15px; transition: 0.2s;}
+  .back-btn:hover { color: var(--primary); }
+  
+  .product-container {
+    max-width: 900px; margin: 40px auto; padding: 0 20px;
+    display: flex; flex-wrap: wrap; gap: 40px; justify-content: center;
+  }
+  .product-image-box {
+    flex: 1; min-width: 300px; background: var(--surface); border-radius: 20px;
+    display: flex; justify-content: center; align-items: center; padding: 40px;
+    border: 1px solid #333;
+  }
+  .product-image-box img { max-width: 100%; max-height: 300px; object-fit: contain; }
+  
+  .product-details {
+    flex: 1; min-width: 300px; text-align: right;
+  }
+  .product-details h1 { font-size: 32px; margin-bottom: 15px; color: #fff; }
+  .product-details .desc { color: var(--text-muted); line-height: 1.6; margin-bottom: 25px; font-size: 16px; }
+  
+  .options-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: var(--primary); }
+  .options-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 30px; }
+  
+  .option-box {
+    background: var(--surface); border: 2px solid #444; border-radius: 12px;
+    padding: 15px; text-align: center; cursor: pointer; transition: 0.2s;
+  }
+  .option-box:hover { border-color: var(--primary-dark); }
+  .option-box.selected { border-color: var(--primary); background: rgba(142, 68, 173, 0.15); box-shadow: 0 0 10px rgba(142, 68, 173, 0.3); }
+  .option-box .opt-name { display: block; font-weight: bold; margin-bottom: 5px; font-size: 15px; }
+  .option-box .opt-price { display: block; color: var(--success); font-weight: bold; font-size: 16px; }
+  
+  .add-to-cart-btn {
+    width: 100%; background: var(--primary); color: #fff; border: none;
+    padding: 18px; border-radius: 12px; font-size: 20px; font-weight: bold;
+    cursor: pointer; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 10px;
+  }
+  .add-to-cart-btn:hover { background: var(--primary-dark); transform: translateY(-2px); }
+  .add-to-cart-btn:disabled { background: #555; cursor: not-allowed; transform: none; }
+  
   /* Cart */
-  .cart-panel { position: fixed; top: 0; left: -450px; width: 380px; height: 100%; background: var(--surface); z-index: 200; padding: 25px; transition: 0.4s ease; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 5px 0 25px rgba(0,0,0,0.8); border-right: 1px solid #333;}
+  .cart-panel { position: fixed; top: 0; left: -450px; width: 380px; height: 100%; background: var(--surface); z-index: 600; padding: 25px; transition: 0.4s ease; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 5px 0 25px rgba(0,0,0,0.8); border-right: 1px solid #333;}
   .cart-panel.open { left: 0; }
   .cart-panel h2 { margin-bottom: 20px; color: var(--primary); border-bottom: 2px solid #333; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;}
   .close-cart { cursor: pointer; color: var(--danger); font-size: 22px; }
@@ -57,7 +109,7 @@
   .checkout:hover { background: var(--primary-dark); }
   
   /* Modals */
-  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 700; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
   .modal-overlay.active { display: flex; animation: fadeIn 0.3s; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   .modal { background: var(--surface); padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; text-align: center; max-height: 90vh; overflow-y: auto; border: 1px solid #444; position: relative;}
@@ -67,8 +119,8 @@
   .modal-close-btn { background: none; border: none; color: var(--danger); font-size: 24px; cursor: pointer; transition: 0.2s;}
   .modal-close-btn:hover { transform: scale(1.2); }
 
-  .modal input, .modal select { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #444; border-radius: 10px; background: #2a2a2a; color: var(--text); font-family: 'Tajawal'; font-size: 16px;}
-  .modal input:focus, .modal select:focus { outline: none; border-color: var(--primary); }
+  .modal input, .modal textarea { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #444; border-radius: 10px; background: #2a2a2a; color: var(--text); font-family: 'Tajawal'; font-size: 16px;}
+  .modal input:focus, .modal textarea:focus { outline: none; border-color: var(--primary); }
   .btn-close { background: var(--success); color: white; border: none; padding: 14px; border-radius: 10px; font-size: 16px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.3s;}
   .btn-close:hover { background: #009e7e; }
   .btn-danger { background: var(--danger); }
@@ -79,7 +131,7 @@
   .admin-options-inputs { background: #1a1a1a; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px dashed #444;}
   
   /* Toast */
-  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; padding: 15px 25px; border-radius: 10px; z-index: 400; transform: translateY(100px); opacity: 0; transition: 0.3s; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.4);}
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; padding: 15px 25px; border-radius: 10px; z-index: 800; transform: translateY(100px); opacity: 0; transition: 0.3s; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.4);}
   .toast.show { transform: translateY(0); opacity: 1; }
 </style>
 </head>
@@ -99,25 +151,40 @@
 
 <div id="store-container"></div>
 
+<!-- صفحة المنتج الكاملة -->
+<div id="productPage">
+  <div class="product-page-header">
+    <button class="back-btn" onclick="closeProductPage()"><i class="fa-solid fa-arrow-right"></i></button>
+    <h3 style="color:var(--primary);">تفاصيل المنتج</h3>
+  </div>
+  
+  <div class="product-container">
+    <div class="product-image-box">
+      <img id="pageImg" src="" alt="Product">
+    </div>
+    
+    <div class="product-details">
+      <h1 id="pageName">اسم المنتج</h1>
+      <p class="desc" id="pageDesc">وصف المنتج يظهر هنا...</p>
+      
+      <h4 class="options-title">اختر الفئة:</h4>
+      <div class="options-grid" id="pageOptions">
+        <!-- الأزرار تتولد هنا -->
+      </div>
+      
+      <button class="add-to-cart-btn" id="pageAddBtn" onclick="addToCartFromPage()" disabled>
+        <i class="fa-solid fa-cart-plus"></i> إضافة للسلة
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- السلة -->
 <div class="cart-panel" id="cartPanel">
   <h2>سلة المشتريات <span class="close-cart" onclick="toggleCart()"><i class="fa-solid fa-xmark"></i></span></h2>
   <div class="cart-items-container" id="cartItems"></div>
   <div class="cart-total"><span>الإجمالي:</span><span id="total">0 ر.س</span></div>
   <button class="checkout" onclick="openCheckout()">إتمام الطلب <i class="fa-solid fa-arrow-left"></i></button>
-</div>
-
-<!-- نافذة اختيار الفئة -->
-<div class="modal-overlay" id="selectOptionModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="optProductName">اسم المنتج</h3>
-      <button class="modal-close-btn" onclick="document.getElementById('selectOptionModal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <p style="color: var(--text-muted); margin-bottom: 15px;">اختر الفئة التي تريد شراءها:</p>
-    <select id="optSelect"></select>
-    <button class="btn-close" onclick="addSelectedToCart()">إضافة للسلة <i class="fa-solid fa-cart-plus"></i></button>
-  </div>
 </div>
 
 <!-- نافذة الدعم الفني -->
@@ -179,6 +246,7 @@
     
     <input type="text" id="newName" placeholder="اسم المنتج (مثلاً: شحن ببجي)">
     <input type="text" id="newImg" placeholder="رابط الصورة (URL) - اختياري">
+    <textarea id="newDesc" rows="3" placeholder="وصف المنتج (مثلاً: تسليم فوري، كود مضمون...)"></textarea>
     
     <div class="admin-options-inputs">
       <p style="font-size: 13px; color: var(--primary); margin-bottom: 10px; font-weight: bold;">الخيارات والأسعار (أضف ما تريد):</p>
@@ -212,6 +280,7 @@ const defaultData = [
   { 
     id: 1, 
     name: "شحن شدات ببجي", 
+    desc: "احصل على شدات ببجي فوراً وبأفضل سعر. يتم التسليم خلال ثواني عبر الكود المباشر.",
     img: "https://cdn-icons-png.flaticon.com/512/5988/5988417.png", 
     options: [
       { optName: "60 شدة", price: 4 },
@@ -223,29 +292,22 @@ const defaultData = [
   { 
     id: 2, 
     name: "بطاقة جوجل بلاي", 
+    desc: "بطاقة جوجل بلاي أمريكية أصلية. صالحة لشراء التطبيقات، الألعاب، والاشتراكات.",
     img: "https://cdn-icons-png.flaticon.com/512/888/888846.png", 
     options: [
       { optName: "فئة 10$", price: 40 },
       { optName: "فئة 25$", price: 95 },
       { optName: "فئة 50$", price: 185 }
     ] 
-  },
-  { 
-    id: 3, 
-    name: "شحن فري فاير", 
-    img: "https://cdn-icons-png.flaticon.com/512/7950/7950374.png", 
-    options: [
-      { optName: "100 جوهرة", price: 5 },
-      { optName: "520 جوهرة", price: 35 },
-      { optName: "1080 جوهرة", price: 65 }
-    ] 
   }
 ];
 
-let products = JSON.parse(localStorage.getItem('cardStoreDataV3')) || defaultData;
+let products = JSON.parse(localStorage.getItem('cardStoreDataV4')) || defaultData;
 let cart = [];
-let currentProductSelected = null;
+let activeProduct = null;
+let selectedOptionIndex = -1;
 
+// عرض المتجر
 function renderStore() {
   const c = document.getElementById('store-container');
   c.innerHTML = '<h2 class="section-title">🛒 جميع المنتجات</h2><section class="products" id="prodList"></section>';
@@ -258,40 +320,66 @@ function renderStore() {
 
   products.forEach(p => {
     prodList.innerHTML += `
-      <div class="card">
+      <div class="card" onclick="openProductPage(${p.id})">
         <img src="${p.img}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/748/748137.png'">
         <div class="card-content">
           <h3>${p.name}</h3>
-          <button onclick="openOptionModal(${p.id})">اختر الفئة <i class="fa-solid fa-list"></i></button>
+          <button>عرض التفاصيل <i class="fa-solid fa-eye"></i></button>
         </div>
       </div>
     `;
   });
 }
 
-function openOptionModal(id) {
-  currentProductSelected = products.find(p => p.id === id);
-  if(!currentProductSelected) return;
+// فتح صفحة المنتج الكاملة
+function openProductPage(id) {
+  activeProduct = products.find(p => p.id === id);
+  if(!activeProduct) return;
   
-  document.getElementById('optProductName').innerText = currentProductSelected.name;
-  const select = document.getElementById('optSelect');
-  select.innerHTML = '';
+  document.getElementById('pageImg').src = activeProduct.img;
+  document.getElementById('pageName').innerText = activeProduct.name;
+  document.getElementById('pageDesc').innerText = activeProduct.desc || "لا يوجد وصف لهذا المنتج.";
   
-  currentProductSelected.options.forEach((opt, index) => {
-    select.innerHTML += `<option value="${index}">${opt.optName} - ${opt.price} ر.س</option>`;
+  const optionsDiv = document.getElementById('pageOptions');
+  optionsDiv.innerHTML = '';
+  selectedOptionIndex = -1; // تصفير الاختيار
+  document.getElementById('pageAddBtn').disabled = true; // تعطيل الزر حتى يختار
+  
+  activeProduct.options.forEach((opt, index) => {
+    optionsDiv.innerHTML += `
+      <div class="option-box" id="optBox-${index}" onclick="selectOption(${index}, ${opt.price})">
+        <span class="opt-name">${opt.optName}</span>
+        <span class="opt-price">${opt.price} ر.س</span>
+      </div>
+    `;
   });
   
-  document.getElementById('selectOptionModal').classList.add('active');
+  document.getElementById('productPage').classList.add('active');
+  document.getElementById('productPage').scrollTop = 0; // رجع لأعلى الصفحة
 }
 
-function addSelectedToCart() {
-  if(!currentProductSelected) return;
-  const selectedIndex = document.getElementById('optSelect').value;
-  const option = currentProductSelected.options[selectedIndex];
+function selectOption(index, price) {
+  // إزالة التحديد من كل الأزرار
+  const allBoxes = document.querySelectorAll('.option-box');
+  allBoxes.forEach(box => box.classList.remove('selected'));
   
+  // تحديد الزر اللي اختاره
+  document.getElementById(`optBox-${index}`).classList.add('selected');
+  selectedOptionIndex = index;
+  
+  // تفعيل زر الإضافة وتغيير النص للسعر
+  const addBtn = document.getElementById('pageAddBtn');
+  addBtn.disabled = false;
+  addBtn.innerHTML = `<i class="fa-solid fa-cart-plus"></i> إضافة للسلة - ${price} ر.س`;
+}
+
+function addToCartFromPage() {
+  if(!activeProduct || selectedOptionIndex === -1) return;
+  
+  const option = activeProduct.options[selectedOptionIndex];
   const cartItem = {
-    id: currentProductSelected.id + "-" + selectedIndex,
-    name: currentProductSelected.name + " - " + option.optName,
+    id: activeProduct.id + "-" + selectedOptionIndex,
+    name: activeProduct.name + " - " + option.optName,
     price: option.price,
     qty: 1
   };
@@ -302,9 +390,14 @@ function addSelectedToCart() {
   
   updateCart();
   showToast('تمت الإضافة للسلة!');
-  document.getElementById('selectOptionModal').classList.remove('active');
+  closeProductPage();
 }
 
+function closeProductPage() {
+  document.getElementById('productPage').classList.remove('active');
+}
+
+// السلة
 function updateCart() {
   let h = ''; let t = 0;
   cart.forEach(i => { 
@@ -328,11 +421,10 @@ function processPayment() {
 }
 function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
 
-// --- الشعار: ضغطة للدعم، ضغط مطول 15 ثانية للإدارة (بدون عداد) ---
+// --- الشعار (15 ثانية للإدارة، ضغطة للدعم) ---
 const logo = document.getElementById('secretLogo');
 const supportModal = document.getElementById('supportModal');
 const loginModal = document.getElementById('loginModal');
-
 let pressTimer;
 let isLongPress = false;
 
@@ -344,7 +436,7 @@ function startPress(e) {
   pressTimer = setTimeout(() => {
     isLongPress = true;
     loginModal.classList.add('active'); 
-  }, 15000); // 15 ثانية
+  }, 15000);
 }
 
 logo.addEventListener('mouseup', endPress);
@@ -358,7 +450,7 @@ function endPress(e) {
   }
 }
 
-// --- تسجيل الدخول ---
+// --- تسجيل الدخول والإدارة ---
 function checkLogin() {
   const user = document.getElementById('adminUser').value;
   const pass = document.getElementById('adminPass').value;
@@ -375,7 +467,6 @@ function checkLogin() {
 }
 function logoutAdmin() { document.getElementById('adminModal').classList.remove('active'); }
 
-// --- لوحة الإدارة ---
 function renderAdmin() {
   let h = '';
   products.forEach(p => {
@@ -388,6 +479,7 @@ function renderAdmin() {
 function addProductAdmin() {
   const n = document.getElementById('newName').value;
   const img = document.getElementById('newImg').value || 'https://cdn-icons-png.flaticon.com/512/748/748137.png';
+  const desc = document.getElementById('newDesc').value;
   
   const optName1 = document.getElementById('optName1').value;
   const optPrice1 = parseFloat(document.getElementById('optPrice1').value);
@@ -413,15 +505,17 @@ function addProductAdmin() {
   products.push({
     id: Date.now(),
     name: n,
+    desc: desc,
     img: img,
     options: optionsArray
   });
   
-  localStorage.setItem('cardStoreDataV3', JSON.stringify(products));
+  localStorage.setItem('cardStoreDataV4', JSON.stringify(products));
   renderStore(); renderAdmin();
   
   document.getElementById('newName').value = '';
   document.getElementById('newImg').value = '';
+  document.getElementById('newDesc').value = '';
   document.getElementById('optName1').value = '';
   document.getElementById('optPrice1').value = '';
   document.getElementById('optName2').value = '';
@@ -432,24 +526,4 @@ function addProductAdmin() {
   document.getElementById('optPrice4').value = '';
   showToast('تم إضافة المنتج بنجاح!');
 }
-
-function del(id) {
-  if(!confirm('هل تريد حذف هذا المنتج؟')) return;
-  products = products.filter(i => i.id !== id);
-  localStorage.setItem('cardStoreDataV3', JSON.stringify(products));
-  renderStore(); renderAdmin();
-  showToast('تم الحذف!');
-}
-
-function resetStore() {
-  if(!confirm('تحذير: سيتم مسح كل المنتجات المضافة والعودة للافتراضي. هل أنت متأكد؟')) return;
-  products = [...defaultData];
-  localStorage.setItem('cardStoreDataV3', JSON.stringify(products));
-  renderStore(); renderAdmin();
-  showToast('تم تصفير المتجر!');
-}
-
-renderStore(); updateCart();
-</script>
-</body>
-</html>
+  
