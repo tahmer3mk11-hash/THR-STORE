@@ -22,8 +22,8 @@
   
   /* Header */
   header { background: var(--surface); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-  .logo { font-size: 26px; font-weight: 900; color: var(--primary); display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; text-shadow: 0 0 10px rgba(142, 68, 173, 0.5); position: relative;}
-  .logo:active { transform: scale(0.95); } /* تأثير عند الضغط المطول */
+  .logo { font-size: 26px; font-weight: 900; color: var(--primary); display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; text-shadow: 0 0 10px rgba(142, 68, 173, 0.5);}
+  .logo:active { transform: scale(0.95); }
   
   .cart-btn { background: var(--primary); color: #fff; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; display: flex; align-items: center; gap: 8px;}
   .cart-btn:hover { background: var(--primary-dark); transform: scale(1.05); }
@@ -81,18 +81,13 @@
   /* Toast */
   .toast { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; padding: 15px 25px; border-radius: 10px; z-index: 400; transform: translateY(100px); opacity: 0; transition: 0.3s; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.4);}
   .toast.show { transform: translateY(0); opacity: 1; }
-
-  /* Secret Counter */
-  #secretCounter { position: absolute; top: 50px; right: 10px; background: var(--danger); color: white; padding: 5px 10px; border-radius: 5px; font-size: 14px; display: none; z-index: 101;}
 </style>
 </head>
 <body>
 
 <header>
-  <!-- الشعار: ضغطة واحدة = دعم، ضغط مطول 15 ثانية = إدارة -->
   <div class="logo" id="secretLogo">
     <i class="fa-solid fa-bolt"></i> CardStore
-    <span id="secretCounter">15</span>
   </div>
   <button class="cart-btn" onclick="toggleCart()"><i class="fa-solid fa-cart-shopping"></i> السلة (<span id="count">0</span>)</button>
 </header>
@@ -112,7 +107,7 @@
   <button class="checkout" onclick="openCheckout()">إتمام الطلب <i class="fa-solid fa-arrow-left"></i></button>
 </div>
 
-<!-- نافذة اختيار الفئة (مع زر إغلاق) -->
+<!-- نافذة اختيار الفئة -->
 <div class="modal-overlay" id="selectOptionModal">
   <div class="modal">
     <div class="modal-header">
@@ -125,7 +120,7 @@
   </div>
 </div>
 
-<!-- نافذة الدعم الفني (للعميل) -->
+<!-- نافذة الدعم الفني -->
 <div class="modal-overlay" id="supportModal">
   <div class="modal">
     <div class="modal-header">
@@ -213,7 +208,6 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// البيانات الافتراضية
 const defaultData = [
   { 
     id: 1, 
@@ -252,7 +246,6 @@ let products = JSON.parse(localStorage.getItem('cardStoreDataV3')) || defaultDat
 let cart = [];
 let currentProductSelected = null;
 
-// عرض المتجر
 function renderStore() {
   const c = document.getElementById('store-container');
   c.innerHTML = '<h2 class="section-title">🛒 جميع المنتجات</h2><section class="products" id="prodList"></section>';
@@ -276,7 +269,6 @@ function renderStore() {
   });
 }
 
-// فتح نافذة الخيارات
 function openOptionModal(id) {
   currentProductSelected = products.find(p => p.id === id);
   if(!currentProductSelected) return;
@@ -336,59 +328,33 @@ function processPayment() {
 }
 function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
 
-// --- الشعار: ضغطة للدعم، ضغط مطول 15 ثانية للإدارة ---
+// --- الشعار: ضغطة للدعم، ضغط مطول 15 ثانية للإدارة (بدون عداد) ---
 const logo = document.getElementById('secretLogo');
 const supportModal = document.getElementById('supportModal');
 const loginModal = document.getElementById('loginModal');
-const counterDisplay = document.getElementById('secretCounter');
 
 let pressTimer;
-let longPressDuration = 15000; // 15 ثانية
-let startTime;
-let countdownInterval;
 let isLongPress = false;
 
-// بداية الضغط
 logo.addEventListener('mousedown', startPress);
 logo.addEventListener('touchstart', startPress, {passive: true});
 
 function startPress(e) {
   isLongPress = false;
-  startTime = Date.now();
-  counterDisplay.style.display = 'block';
-  counterDisplay.innerText = '15';
-  
-  // عداد تنازلي
-  countdownInterval = setInterval(() => {
-    let elapsed = Date.now() - startTime;
-    let remaining = Math.ceil((longPressDuration - elapsed) / 1000);
-    if (remaining >= 0) {
-      counterDisplay.innerText = remaining;
-    }
-  }, 100);
-
-  // مؤقت 15 ثانية
   pressTimer = setTimeout(() => {
     isLongPress = true;
-    clearInterval(countdownInterval);
-    counterDisplay.style.display = 'none';
-    loginModal.classList.add('active'); // فتح الإدارة
-  }, longPressDuration);
+    loginModal.classList.add('active'); 
+  }, 15000); // 15 ثانية
 }
 
-// نهاية الضغط
 logo.addEventListener('mouseup', endPress);
 logo.addEventListener('mouseleave', endPress);
 logo.addEventListener('touchend', endPress);
 
 function endPress(e) {
   clearTimeout(pressTimer);
-  clearInterval(countdownInterval);
-  counterDisplay.style.display = 'none';
-  
   if (!isLongPress) {
-    // إذا كانت ضغطة سريعة (أقل من 15 ثانية)، افتح الدعم
-    supportModal.classList.add('active');
+    supportModal.classList.add('active'); 
   }
 }
 
@@ -432,7 +398,6 @@ function addProductAdmin() {
   
   let optionsArray = [{ optName: optName1, price: optPrice1 }];
   
-  // التحقق من الخيارات الإضافية
   const optName2 = document.getElementById('optName2').value;
   const optPrice2 = parseFloat(document.getElementById('optPrice2').value);
   if(optName2 && optPrice2) optionsArray.push({ optName: optName2, price: optPrice2 });
@@ -455,7 +420,6 @@ function addProductAdmin() {
   localStorage.setItem('cardStoreDataV3', JSON.stringify(products));
   renderStore(); renderAdmin();
   
-  // تفريغ الحقول
   document.getElementById('newName').value = '';
   document.getElementById('newImg').value = '';
   document.getElementById('optName1').value = '';
