@@ -147,9 +147,31 @@
   
   .admin-list-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 10px 15px; margin-bottom: 8px; border-radius: 8px; font-size: 14px; border: 1px solid rgba(255,255,255,0.05);}
   .admin-options-inputs { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px dashed rgba(255,255,255,0.1);}
-  
-  .toast { position: fixed; bottom: 30px; right: 30px; background: var(--primary); color: white; padding: 15px 25px; border-radius: 12px; z-index: 800; transform: translateY(100px); opacity: 0; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.5);}
+
+  /* نظام الإشعارات الجديد (Toasts) */
+  .toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; gap: 15px; pointer-events: none;}
+  .toast { 
+    background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(10px);
+    color: white; padding: 16px 24px; border-radius: 12px; 
+    display: flex; align-items: center; gap: 12px; font-weight: bold;
+    transform: translateY(100px); opacity: 0; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
+    pointer-events: auto; max-width: 350px;
+  }
   .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-right: 4px solid var(--success); }
+  .toast.error { border-right: 4px solid var(--danger); }
+  .toast.warning { border-right: 4px solid #f39c12; }
+  .toast .toast-icon { font-size: 20px; }
+  .toast.success .toast-icon { color: var(--success); }
+  .toast.error .toast-icon { color: var(--danger); }
+  .toast.warning .toast-icon { color: #f39c12; }
+  
+  /* إشعارات التأكيد */
+  .toast-confirm { display: flex; gap: 10px; margin-top: 10px; width: 100%;}
+  .toast-confirm button { flex: 1; padding: 8px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: 'Tajawal';}
+  .toast-confirm .btn-yes { background: var(--danger); color: white;}
+  .toast-confirm .btn-no { background: #444; color: white;}
 
   footer { text-align: center; padding: 40px; background: rgba(20, 20, 20, 0.8); color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.05); margin-top: 50px;}
 
@@ -159,6 +181,8 @@
     .fav-btn { opacity: 1; } .details-btn { opacity: 1; transform: translateY(0); pointer-events: auto;} .card { padding-bottom: 15px;}
     .cart-panel { width: 100%; left: -100%; }
     .header-right { width: 100%; justify-content: space-between;}
+    .toast-container { bottom: 15px; right: 15px; left: 15px; }
+    .toast { max-width: 100%; }
   }
 </style>
 </head>
@@ -172,7 +196,6 @@
       <i class="fa-solid fa-bolt"></i> <span id="headerSiteName">CardStore</span>
     </div>
     
-    <!-- أزرار الدعم وتسجيل الدخول -->
     <button class="btn-header support-btn" onclick="document.getElementById('supportModal').classList.add('active')">
       <i class="fa-solid fa-headset"></i>
     </button>
@@ -361,37 +384,85 @@
   <p id="footerText">© 2025 CardStore</p>
 </footer>
 
-<div class="toast" id="toast"></div>
+<!-- حاوية الإشعارات -->
+<div class="toast-container" id="toastContainer"></div>
 
 <script>
 const defaultData = [
   { id: 1, name: "شحن شدات ببجي", desc: "احصل على شدات ببجي فوراً وبأفضل سعر.", img: "https://cdnlogo.com/logos/p/59/pubg-mobile.png", options: [{ optName: "60 شدة", price: 4 }, { optName: "325 شدة", price: 19 }, { optName: "660 شدة", price: 38 }, { optName: "1800 شدة", price: 95 }] },
   { id: 2, name: "شحن جواهر فري فاير", desc: "شحن جواهر فري فاير بشكل آمن وسريع.", img: "https://logodix.com/logo/2205219.png", options: [{ optName: "100 جوهرة", price: 5 }, { optName: "520 جوهرة", price: 35 }, { optName: "1080 جوهرة", price: 65 }] },
-  { id: 3, name: "شحن روبلوكس (Robux)", desc: "شحن شدات روبلوكس لحسابك مباشرة.", img: "https://superdevpro.com/brands/roblox.svg", options: [{ optName: "400 روبوكس", price: 20 }, { optName: "800 روبوكس", price: 40 }, { optName: "1700 روبوكس", price: 80 }] },
-  { id: 4, name: "شحن ماين كرافت", desc: "شحن عملات ماين كرافت لشراء السكنات.", img: "https://toppng.com/uploads/preview/minecraft-logo-icon-minecraft-material-design-icon-png-11553329307xvkqjomfkv.png", options: [{ optName: "1720 عملة", price: 40 }, { optName: "3500 عملة", price: 75 }] },
-  { id: 5, name: "بطاقة جوجل بلاي", desc: "بطاقة جوجل بلاي أمريكية أصلية.", img: "https://cdn-icons-png.flaticon.com/512/888/888846.png", options: [{ optName: "فئة 10$", price: 40 }, { optName: "فئة 25$", price: 95 }, { optName: "فئة 50$", price: 185 }] },
-  { id: 6, name: "بطاقة آيتونز (iTunes)", desc: "بطاقة آيتونز أمريكية أصلية.", img: "https://cdn-icons-png.flaticon.com/512/179/179309.png", options: [{ optName: "فئة 10$", price: 42 }, { optName: "فئة 25$", price: 100 }, { optName: "فئة 50$", price: 195 }] },
-  { id: 7, name: "بطاقة ستيم (Steam)", desc: "شحن محفظة ستيم لشراء الألعاب.", img: "https://www.streamlinehq.com/icons/download/steam-logo-light--28927", options: [{ optName: "فئة 20$", price: 85 }, { optName: "فئة 50$", price: 200 }] },
-  { id: 8, name: "بطاقة بلايستيشن (PSN)", desc: "بطاقة شبكة بلايستيشن لشراء الألعاب.", img: "https://superdevpro.com/brands/playstation.svg", options: [{ optName: "فئة 10$", price: 45 }, { optName: "فئة 25$", price: 105 }, { optName: "فئة 50$", price: 200 }] },
-  { id: 9, name: "اشتراك نتفليكس (Netflix)", desc: "اشتراك نتفليكس شهر كامل (شاشة واحدة).", img: "https://www.streamlinehq.com/icons/download/netflix-logo--28613", options: [{ optName: "شهر واحد", price: 35 }, { optName: "3 أشهر", price: 90 }] },
-  { id: 10, name: "اشتراك سبوتيفاي (Spotify)", desc: "اشتراك سبوتيفاي بريميوم للاستماع بدون إعلانات.", img: "https://www.streamlinehq.com/icons/download/spotify--31103", options: [{ optName: "شهر واحد", price: 25 }, { optName: "6 أشهر", price: 120 }] }
+  { id: 3, name: "شحن روبلوكس (Robux)", desc: "شحن شدات روبلوكس لحسابك مباشرة.", img: "https://superdevpro.com/brands/roblox.svg", options: [{ optName: "400 روبوكس", price: 20 }, { optName: "800 روبوكس", price: 40 }, { optName: "1700 روبوكس", price: 80 }] }
 ];
 
 const defaultSettings = { siteName: "CardStore", heroTitle: "المتجر الشامل", heroDesc: "تسليم فوري وأمان تام", themeColor: "#8e44ad", whatsapp: "966534949015", upsellProductId: null };
 
-let products = JSON.parse(localStorage.getItem('cardStoreV12_Products')) || defaultData;
-let settings = JSON.parse(localStorage.getItem('cardStoreV12_Settings')) || defaultSettings;
-let favorites = JSON.parse(localStorage.getItem('cardStoreV12_Favs')) || [];
-let cart = JSON.parse(localStorage.getItem('cardStoreV12_Cart')) || [];
-let currentUser = JSON.parse(localStorage.getItem('cardStoreV12_User')) || null; // حفظ المستخدم
+let products = JSON.parse(localStorage.getItem('cardStoreV13_Products')) || defaultData;
+let settings = JSON.parse(localStorage.getItem('cardStoreV13_Settings')) || defaultSettings;
+let favorites = JSON.parse(localStorage.getItem('cardStoreV13_Favs')) || [];
+let cart = JSON.parse(localStorage.getItem('cardStoreV13_Cart')) || [];
+let currentUser = JSON.parse(localStorage.getItem('cardStoreV13_User')) || null;
 let activeProduct = null;
 let selectedOptionIndex = -1;
 
-// إعدادات الحساب
+// --- نظام الإشعارات الجديد ---
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  
+  let icon = 'fa-check-circle';
+  if(type === 'error') icon = 'fa-circle-xmark';
+  if(type === 'warning') icon = 'fa-triangle-exclamation';
+  
+  toast.innerHTML = `<i class="fa-solid ${icon} toast-icon"></i> <span>${message}</span>`;
+  container.appendChild(toast);
+  
+  // حركة الدخول
+  setTimeout(() => toast.classList.add('show'), 10);
+  
+  // إخفاء تلقائي بعد 3 ثواني
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// إشعار تأكيد (نعم / لا)
+function showConfirm(message, onConfirm) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast warning`;
+  toast.style.flexDirection = 'column';
+  toast.style.alignItems = 'flex-start';
+  
+  toast.innerHTML = `
+    <div style="display:flex; align-items:center; gap:10px;">
+      <i class="fa-solid fa-triangle-exclamation toast-icon"></i> 
+      <span>${message}</span>
+    </div>
+    <div class="toast-confirm">
+      <button class="btn-yes" id="btn-yes">نعم</button>
+      <button class="btn-no" id="btn-no">إلغاء</button>
+    </div>
+  `;
+  container.appendChild(toast);
+  
+  setTimeout(() => toast.classList.add('show'), 10);
+  
+  toast.querySelector('#btn-yes').onclick = () => {
+    toast.remove();
+    onConfirm();
+  };
+  toast.querySelector('#btn-no').onclick = () => {
+    toast.remove();
+  };
+}
+
+// --- نظام الحساب ---
 function updateAuthUI() {
   const authBtn = document.getElementById('authText');
   if(currentUser) {
-    authBtn.innerText = currentUser.email.split('@')[0]; // عرض الجزء الأول من الإيميل
+    authBtn.innerText = currentUser.email.split('@')[0];
     document.getElementById('authButton').style.borderColor = 'var(--success)';
   } else {
     authBtn.innerText = "تسجيل الدخول";
@@ -401,13 +472,12 @@ function updateAuthUI() {
 
 function handleAuthClick() {
   if(currentUser) {
-    // تسجيل خروج
-    if(confirm('هل تريد تسجيل الخروج؟')) {
+    showConfirm('هل تريد تسجيل الخروج؟', () => {
       currentUser = null;
-      localStorage.removeItem('cardStoreV12_User');
+      localStorage.removeItem('cardStoreV13_User');
       updateAuthUI();
-      showToast('تم تسجيل الخروج');
-    }
+      showToast('تم تسجيل الخروج', 'success');
+    });
   } else {
     document.getElementById('loginModal').classList.add('active');
   }
@@ -417,17 +487,20 @@ function loginUser() {
   const email = document.getElementById('userEmail').value;
   const pass = document.getElementById('userPass').value;
   
-  if(!email || !pass || !email.includes('@')) return alert('أدخل بريد إلكتروني صحيح وكلمة مرور');
+  if(!email || !pass || !email.includes('@')) {
+    return showToast('أدخل بريد إلكتروني صحيح وكلمة مرور', 'error');
+  }
   
   currentUser = { email: email, pass: pass };
-  localStorage.setItem('cardStoreV12_User', JSON.stringify(currentUser));
+  localStorage.setItem('cardStoreV13_User', JSON.stringify(currentUser));
   document.getElementById('loginModal').classList.remove('active');
   updateAuthUI();
-  showToast('تم تسجيل الدخول بنجاح!');
+  showToast('تم تسجيل الدخول بنجاح!', 'success');
   document.getElementById('userEmail').value = '';
   document.getElementById('userPass').value = '';
 }
 
+// --- تطبيق الإعدادات ---
 function applySettings() {
   document.getElementById('siteTitle').innerText = settings.siteName;
   document.getElementById('headerSiteName').innerText = settings.siteName;
@@ -479,9 +552,9 @@ function renderStore() {
 function toggleFav(e, id) {
   e.stopPropagation();
   const index = favorites.indexOf(id);
-  if(index > -1) { favorites.splice(index, 1); showToast('تمت الإزالة'); } 
-  else { favorites.push(id); showToast('تمت الإضافة للمفضلة ❤️'); }
-  localStorage.setItem('cardStoreV12_Favs', JSON.stringify(favorites));
+  if(index > -1) { favorites.splice(index, 1); showToast('تمت الإزالة من المفضلة', 'success'); } 
+  else { favorites.push(id); showToast('تمت الإضافة للمفضلة ❤️', 'success'); }
+  localStorage.setItem('cardStoreV13_Favs', JSON.stringify(favorites));
   renderStore();
 }
 
@@ -524,7 +597,7 @@ function addToCartFromPage() {
   const cartItem = { id: activeProduct.id + "-" + selectedOptionIndex, name: activeProduct.name + " - " + option.optName, price: option.price, qty: 1 };
   const existing = cart.find(i => i.id === cartItem.id);
   if(existing) existing.qty++; else cart.push(cartItem);
-  updateCart(); showToast('تمت الإضافة!'); closeProductPage();
+  updateCart(); showToast('تمت الإضافة للسلة!', 'success'); closeProductPage();
 }
 
 function closeProductPage() { document.getElementById('productPage').classList.remove('active'); }
@@ -535,9 +608,8 @@ function updateCart() {
   document.getElementById('cartItems').innerHTML = h || '<p style="text-align:center; color:var(--text-muted); margin-top:20px;">السلة فارغة</p>';
   document.getElementById('total').innerText = t + ' ر.س';
   document.getElementById('count').innerText = cart.reduce((s,i)=>s+i.qty,0);
-  localStorage.setItem('cardStoreV12_Cart', JSON.stringify(cart));
+  localStorage.setItem('cardStoreV13_Cart', JSON.stringify(cart));
 
-  // المنتج المقترح
   const upsellBox = document.getElementById('upsellBox');
   if(settings.upsellProductId && cart.length > 0) {
     const upsellProduct = products.find(p => p.id === settings.upsellProductId);
@@ -557,16 +629,16 @@ function addUpsellToCart() {
   const cartItem = { id: p.id + "-0", name: p.name + " - " + opt.optName, price: opt.price, qty: 1 };
   const existing = cart.find(i => i.id === cartItem.id);
   if(existing) existing.qty++; else cart.push(cartItem);
-  updateCart(); showToast('تمت الإضافة!');
+  updateCart(); showToast('تمت إضافة العرض!', 'success');
 }
 
 function removeCart(id) { cart = cart.filter(i => i.id !== id); updateCart(); }
 function toggleCart() { document.getElementById('cartPanel').classList.toggle('open'); }
 
 function openCheckout() { 
-  if(!cart.length) return showToast('السلة فارغة!');
+  if(!cart.length) return showToast('السلة فارغة!', 'warning');
   if(!currentUser) {
-    showToast('الرجاء تسجيل الدخول أولاً');
+    showToast('الرجاء تسجيل الدخول أولاً', 'warning');
     document.getElementById('loginModal').classList.add('active');
     return;
   }
@@ -578,10 +650,11 @@ function processPayment() {
   document.getElementById('deliveryCode').innerText = "CARD-" + Math.floor(Math.random()*10000) + "-" + Math.floor(Math.random()*10000); 
   document.getElementById('successModal').classList.add('active'); 
   cart = []; updateCart(); 
+  showToast('تم الشراء بنجاح!', 'success');
 }
 
 function sendOrderToWhatsApp() {
-  if(cart.length === 0) return showToast('السلة فارغة!');
+  if(cart.length === 0) return showToast('السلة فارغة!', 'warning');
   let message = "مرحباً، أرغب بطلب:\n\n";
   let total = 0;
   cart.forEach(i => { message += `- ${i.name} (x${i.qty}) = ${i.price * i.qty} ر.س\n`; total += i.price * i.qty; });
@@ -589,8 +662,6 @@ function sendOrderToWhatsApp() {
   if(currentUser) message += `\nإيميل العميل: ${currentUser.email}`;
   window.open(`https://wa.me/${settings.whatsapp}?text=${encodeURIComponent(message)}`, '_blank');
 }
-
-function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
 
 // --- الإدارة ---
 const logo = document.getElementById('secretLogo');
@@ -622,7 +693,10 @@ function checkAdminLogin() {
     renderAdmin();
     document.getElementById('adminUser').value = '';
     document.getElementById('adminPass').value = '';
-  } else { alert('خطأ في البيانات!'); }
+    showToast('مرحباً بك في لوحة التحكم', 'success');
+  } else { 
+    showToast('خطأ في اسم المستخدم أو كلمة المرور!', 'error'); 
+  }
 }
 
 function switchTab(tabId) {
@@ -638,14 +712,14 @@ function saveSettings() {
   settings.heroDesc = document.getElementById('setHeroDesc').value;
   settings.themeColor = document.getElementById('setThemeColor').value;
   settings.whatsapp = document.getElementById('setWhatsApp').value;
-  localStorage.setItem('cardStoreV12_Settings', JSON.stringify(settings));
-  applySettings(); showToast('تم الحفظ!');
+  localStorage.setItem('cardStoreV13_Settings', JSON.stringify(settings));
+  applySettings(); showToast('تم حفظ الإعدادات!', 'success');
 }
 
 function saveSmartSettings() {
   settings.upsellProductId = parseInt(document.getElementById('setUpsellProduct').value) || null;
-  localStorage.setItem('cardStoreV12_Settings', JSON.stringify(settings));
-  updateCart(); showToast('تم الحفظ!');
+  localStorage.setItem('cardStoreV13_Settings', JSON.stringify(settings));
+  updateCart(); showToast('تم حفظ إعدادات السلة!', 'success');
 }
 
 function renderAdmin() {
@@ -660,32 +734,34 @@ function renderAdmin() {
 function addProductAdmin() {
   const n = document.getElementById('newName').value; const img = document.getElementById('newImg').value || 'https://cdn-icons-png.flaticon.com/512/748/748137.png'; const desc = document.getElementById('newDesc').value;
   const optName1 = document.getElementById('optName1').value; const optPrice1 = parseFloat(document.getElementById('optPrice1').value);
-  if(!n || !optName1 || !optPrice1) return alert('أدخل اسم المنتج والخيار الأول');
+  if(!n || !optName1 || !optPrice1) return showToast('أدخل اسم المنتج والخيار الأول', 'error');
   
   let optionsArray = [{ optName: optName1, price: optPrice1 }];
   const optName2 = document.getElementById('optName2').value; const optPrice2 = parseFloat(document.getElementById('optPrice2').value);
   if(optName2 && optPrice2) optionsArray.push({ optName: optName2, price: optPrice2 });
   
   products.push({ id: Date.now(), name: n, desc: desc, img: img, options: optionsArray });
-  localStorage.setItem('cardStoreV12_Products', JSON.stringify(products));
+  localStorage.setItem('cardStoreV13_Products', JSON.stringify(products));
   renderStore(); renderAdmin();
   document.getElementById('newName').value = ''; document.getElementById('newImg').value = ''; document.getElementById('newDesc').value = ''; document.getElementById('optName1').value = ''; document.getElementById('optPrice1').value = ''; document.getElementById('optName2').value = ''; document.getElementById('optPrice2').value = '';
-  showToast('تمت الإضافة!');
+  showToast('تمت إضافة المنتج بنجاح!', 'success');
 }
 
 function del(id) {
-  if(!confirm('حذف المنتج؟')) return;
-  products = products.filter(i => i.id !== id);
-  localStorage.setItem('cardStoreV12_Products', JSON.stringify(products));
-  renderStore(); renderAdmin(); showToast('تم الحذف!');
+  showConfirm('هل تريد حذف هذا المنتج؟', () => {
+    products = products.filter(i => i.id !== id);
+    localStorage.setItem('cardStoreV13_Products', JSON.stringify(products));
+    renderStore(); renderAdmin(); showToast('تم حذف المنتج', 'success');
+  });
 }
 
 function resetStore() {
-  if(!confirm('مسح كل شيء؟')) return;
-  products = [...defaultData]; settings = {...defaultSettings}; cart = []; currentUser = null;
-  localStorage.clear();
-  applySettings(); renderStore(); renderAdmin(); updateCart(); updateAuthUI();
-  showToast('تم التصفير!');
+  showConfirm('سيتم مسح كل شيء والعودة للوضع الافتراضي. هل أنت متأكد؟', () => {
+    products = [...defaultData]; settings = {...defaultSettings}; cart = []; currentUser = null;
+    localStorage.clear();
+    applySettings(); renderStore(); renderAdmin(); updateCart(); updateAuthUI();
+    showToast('تم تصفير المتجر!', 'success');
+  });
 }
 
 // التشغيل
