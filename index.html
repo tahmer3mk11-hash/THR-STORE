@@ -526,4 +526,24 @@ function addProductAdmin() {
   document.getElementById('optPrice4').value = '';
   showToast('تم إضافة المنتج بنجاح!');
 }
-  
+
+function del(id) {
+  if(!confirm('هل تريد حذف هذا المنتج؟')) return;
+  products = products.filter(i => i.id !== id);
+  localStorage.setItem('cardStoreDataV4', JSON.stringify(products));
+  renderStore(); renderAdmin();
+  showToast('تم الحذف!');
+}
+
+function resetStore() {
+  if(!confirm('تحذير: سيتم مسح كل المنتجات المضافة والعودة للافتراضي. هل أنت متأكد؟')) return;
+  products = [...defaultData];
+  localStorage.setItem('cardStoreDataV4', JSON.stringify(products));
+  renderStore(); renderAdmin();
+  showToast('تم تصفير المتجر!');
+}
+
+renderStore(); updateCart();
+</script>
+</body>
+</html>
