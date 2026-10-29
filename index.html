@@ -23,6 +23,7 @@
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Tajawal', sans-serif; }
   body { background: var(--bg); color: var(--text); overflow-x: hidden; }
   
+  /* Header */
   header { background: var(--surface); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.5); flex-wrap: wrap; gap: 10px;}
   .header-right { display: flex; align-items: center; gap: 15px; }
   
@@ -49,22 +50,36 @@
   .card img { width: 100%; height: 150px; object-fit: contain; background: var(--card-bg); padding: 20px; cursor: pointer;}
   .card-content { padding: 20px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; }
   .card h3 { font-size: 18px; margin-bottom: 10px; font-weight: 700; color: var(--text); }
-  .card button { margin-top: auto; width: 100%; background: var(--success); color: #fff; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; transition: var(--transition);}
-  .card button:hover { background: #009e7e; transform: scale(1.02); }
   
-  /* زر المفضلة (صغير جداً ومربع ومخفي) */
+  /* زر الشراء (أخضر) */
+  .add-btn { margin-top: auto; width: 100%; background: var(--success); color: #fff; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; transition: var(--transition);}
+  .add-btn:hover { background: #009e7e; transform: scale(1.02); }
+  
+  /* زر المفضلة (مربع وصغير جداً ومخفي) */
   .fav-btn { 
-    position: absolute; top: 10px; left: 10px; 
-    background: rgba(0,0,0,0.6); color: #fff; border: none; 
-    width: 25px; height: 25px; /* صغرنا المقاس هنا */
-    border-radius: 6px; cursor: pointer; 
-    display: flex; justify-content: center; align-items: center;
-    font-size: 12px; opacity: 0; transition: 0.3s;
-    padding: 0; 
+    position: absolute !important; 
+    top: 10px !important; 
+    left: 10px !important; 
+    width: 30px !important; 
+    height: 30px !important; 
+    background: rgba(0,0,0,0.7) !important; 
+    color: #fff !important; 
+    border: none !important; 
+    border-radius: 8px !important; 
+    cursor: pointer; 
+    display: flex !important; 
+    justify-content: center !important; 
+    align-items: center !important; 
+    font-size: 14px !important; 
+    opacity: 0; 
+    transition: 0.3s !important;
+    padding: 0 !important;
+    z-index: 10;
+    margin: 0 !important;
   }
-  .fav-btn i { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;}
   .card:hover .fav-btn { opacity: 1; } 
-  .fav-btn.active { color: var(--danger); opacity: 1; background: rgba(255,255,255,0.9);}
+  .fav-btn.active { color: var(--danger) !important; opacity: 1; background: #fff !important;} 
+  .fav-btn i { pointer-events: none; }
 
   #productPage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 500; overflow-y: auto; display: none; flex-direction: column; }
   #productPage.active { display: flex; animation: fadeIn 0.3s; }
@@ -143,7 +158,7 @@
     .cart-btn { padding: 8px 12px; font-size: 14px; }
     .search-box { order: 3; width: 100%; max-width: 100%; margin-top: 5px; }
     .hero h1 { font-size: 28px; }
-    .fav-btn { opacity: 1; } /* في الجوال يظهر عشان يقدر يضغطه */
+    .fav-btn { opacity: 1; } 
   }
 </style>
 </head>
@@ -341,23 +356,23 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// الصور الجديدة (شعارات رسمية مضمونة)
+// --- 1. البيانات الأساسية (Database) ---
 const defaultData = [
-  { id: 1, name: "شحن شدات ببجي", desc: "احصل على شدات ببجي فوراً وبأفضل سعر.", img: "https://cdn-icons-png.flaticon.com/512/5988/5988417.png", options: [{ optName: "60 شدة", price: 4 }, { optName: "325 شدة", price: 19 }, { optName: "660 شدة", price: 38 }, { optName: "1800 شدة", price: 95 }] },
-  { id: 2, name: "شحن جواهر فري فاير", desc: "شحن جواهر فري فاير بشكل آمن وسريع.", img: "https://cdn-icons-png.flaticon.com/512/7950/7950374.png", options: [{ optName: "100 جوهرة", price: 5 }, { optName: "520 جوهرة", price: 35 }, { optName: "1080 جوهرة", price: 65 }] },
-  { id: 3, name: "شحن روبلوكس (Robux)", desc: "شحن شدات روبلوكس لحسابك مباشرة.", img: "https://cdn-icons-png.flaticon.com/512/9143/9143950.png", options: [{ optName: "400 روبوكس", price: 20 }, { optName: "800 روبوكس", price: 40 }, { optName: "1700 روبوكس", price: 80 }] },
-  { id: 4, name: "شحن ماين كرافت (Minecoin)", desc: "شحن عملات ماين كرافت لشراء السكنات.", img: "https://cdn-icons-png.flaticon.com/512/8151/8151615.png", options: [{ optName: "1720 عملة", price: 40 }, { optName: "3500 عملة", price: 75 }] },
-  { id: 5, name: "بطاقة جوجل بلاي", desc: "بطاقة جوجل بلاي أمريكية أصلية.", img: "https://cdn-icons-png.flaticon.com/512/888/888846.png", options: [{ optName: "فئة 10$", price: 40 }, { optName: "فئة 25$", price: 95 }, { optName: "فئة 50$", price: 185 }] },
-  { id: 6, name: "بطاقة آيتونز (iTunes)", desc: "بطاقة آيتونز أمريكية لشراء تطبيقات الآيفون.", img: "https://cdn-icons-png.flaticon.com/512/179/179309.png", options: [{ optName: "فئة 10$", price: 42 }, { optName: "فئة 25$", price: 100 }, { optName: "فئة 50$", price: 195 }] },
-  { id: 7, name: "بطاقة ستيم (Steam)", desc: "شحن محفظة ستيم لشراء الألعاب.", img: "https://cdn-icons-png.flaticon.com/512/5968/5968360.png", options: [{ optName: "فئة 20$", price: 85 }, { optName: "فئة 50$", price: 200 }] },
-  { id: 8, name: "بطاقة بلايستيشن (PSN)", desc: "بطاقة شبكة بلايستيشن لشراء الألعاب.", img: "https://cdn-icons-png.flaticon.com/512/5968/5968306.png", options: [{ optName: "فئة 10$", price: 45 }, { optName: "فئة 25$", price: 105 }, { optName: "فئة 50$", price: 200 }] },
-  { id: 9, name: "اشتراك نتفليكس (Netflix)", desc: "اشتراك نتفليكس شهر كامل (شاشة واحدة).", img: "https://cdn-icons-png.flaticon.com/512/732/732228.png", options: [{ optName: "شهر واحد", price: 35 }, { optName: "3 أشهر", price: 90 }] },
-  { id: 10, name: "اشتراك سبوتيفاي (Spotify)", desc: "اشتراك سبوتيفاي بريميوم للاستماع بدون إعلانات.", img: "https://cdn-icons-png.flaticon.com/512/174/174872.png", options: [{ optName: "شهر واحد", price: 25 }, { optName: "6 أشهر", price: 120 }] },
-  { id: 11, name: "اشتراك شاهد VIP", desc: "اشتراك شاهد VIP لمشاهدة المسلسلات والأفلام.", img: "https://cdn-icons-png.flaticon.com/512/10691/10691837.png", options: [{ optName: "شهر واحد", price: 35 }, { optName: "3 أشهر", price: 90 }] },
+  { id: 1, name: "شحن شدات ببجي", desc: "احصل على شدات ببجي فوراً وبأفضل سعر. يتم التسليم خلال ثواني عبر الكود المباشر.", img: "https://cdn-icons-png.flaticon.com/512/5988/5988417.png", options: [{ optName: "60 شدة", price: 4 }, { optName: "325 شدة", price: 19 }, { optName: "660 شدة", price: 38 }, { optName: "1800 شدة", price: 95 }] },
+  { id: 2, name: "شحن جواهر فري فاير", desc: "شحن جواهر فري فاير بشكل آمن وسريع. يدعم جميع السيرفرات.", img: "https://cdn-icons-png.flaticon.com/512/7950/7950374.png", options: [{ optName: "100 جوهرة", price: 5 }, { optName: "520 جوهرة", price: 35 }, { optName: "1080 جوهرة", price: 65 }] },
+  { id: 3, name: "شحن روبلوكس (Robux)", desc: "شحن شدات روبلوكس لحسابك مباشرة. تسليم فوري وآمن 100%.", img: "https://cdn-icons-png.flaticon.com/512/9143/9143950.png", options: [{ optName: "400 روبوكس", price: 20 }, { optName: "800 روبوكس", price: 40 }, { optName: "1700 روبوكس", price: 80 }] },
+  { id: 4, name: "شحن ماين كرافت (Minecoin)", desc: "شحن عملات ماين كرافت لشراء السكنات والإضافات.", img: "https://cdn-icons-png.flaticon.com/512/8151/8151615.png", options: [{ optName: "1720 عملة", price: 40 }, { optName: "3500 عملة", price: 75 }] },
+  { id: 5, name: "بطاقة جوجل بلاي", desc: "بطاقة جوجل بلاي أمريكية أصلية. صالحة لشراء التطبيقات، الألعاب، والاشتراكات.", img: "https://cdn-icons-png.flaticon.com/512/888/888846.png", options: [{ optName: "فئة 10$", price: 40 }, { optName: "فئة 25$", price: 95 }, { optName: "فئة 50$", price: 185 }] },
+  { id: 6, name: "بطاقة آيتونز (iTunes)", desc: "بطاقة آيتونز أمريكية لشراء تطبيقات الآيفون والاشتراكات.", img: "https://cdn-icons-png.flaticon.com/512/179/179309.png", options: [{ optName: "فئة 10$", price: 42 }, { optName: "فئة 25$", price: 100 }, { optName: "فئة 50$", price: 195 }] },
+  { id: 7, name: "بطاقة ستيم (Steam)", desc: "شحن محفظة ستيم لشراء الألعاب. كود أمريكي.", img: "https://cdn-icons-png.flaticon.com/512/5968/5968360.png", options: [{ optName: "فئة 20$", price: 85 }, { optName: "فئة 50$", price: 200 }] },
+  { id: 8, name: "بطاقة بلايستيشن (PSN)", desc: "بطاقة شبكة بلايستيشن لشراء الألعاب أو الاشتراكات.", img: "https://cdn-icons-png.flaticon.com/512/5968/5968306.png", options: [{ optName: "فئة 10$", price: 45 }, { optName: "فئة 25$", price: 105 }, { optName: "فئة 50$", price: 200 }] },
+  { id: 9, name: "اشتراك نتفليكس (Netflix)", desc: "اشتراك نتفليكس شهر كامل (شاشة واحدة). حساب خاص ومضمون.", img: "https://cdn-icons-png.flaticon.com/512/732/732228.png", options: [{ optName: "شهر واحد", price: 35 }, { optName: "3 أشهر", price: 90 }] },
+  { id: 10, name: "اشتراك سبوتيفاي (Spotify)", desc: "اشتراك سبوتيفاي بريميوم للاستماع بدون إعلانات وتحكم كامل.", img: "https://cdn-icons-png.flaticon.com/512/174/174872.png", options: [{ optName: "شهر واحد", price: 25 }, { optName: "6 أشهر", price: 120 }] },
+  { id: 11, name: "اشتراك شاهد VIP", desc: "اشتراك شاهد VIP لمشاهدة المسلسلات والأفلام الحصرية.", img: "https://cdn-icons-png.flaticon.com/512/10691/10691837.png", options: [{ optName: "شهر واحد", price: 35 }, { optName: "3 أشهر", price: 90 }] },
   { id: 12, name: "اشتراك يوتيوب بريميوم", desc: "مشاهدة يوتيوب بدون إعلانات مع تشغيل في الخلفية.", img: "https://cdn-icons-png.flaticon.com/512/1384/1384060.png", options: [{ optName: "شهر واحد", price: 20 }, { optName: "3 أشهر", price: 50 }] },
   { id: 13, name: "ويندوز 11 برو", desc: "مفتاح تنشيط ويندوز 11 برو أصلي ومدى الحياة.", img: "https://cdn-icons-png.flaticon.com/512/888/888879.png", options: [{ optName: "مفتاح أصلي", price: 60 }] },
-  { id: 14, name: "أوفيس 2021 برو بلس", desc: "مفتاح تنشيط أوفيس 2021 برو بلس.", img: "https://cdn-icons-png.flaticon.com/512/732/732220.png", options: [{ optName: "مفتاح أصلي", price: 85 }] },
-  { id: 15, name: "اشتراك كانفا برو (Canva)", desc: "دخول على حساب كانفا برو لمدة سنة كاملة.", img: "https://cdn-icons-png.flaticon.com/512/5968/5968705.png", options: [{ optName: "سنة كاملة", price: 45 }] }
+  { id: 14, name: "أوفيس 2021 برو بلس", desc: "مفتاح تنشيط أوفيس 2021 برو بلس (يشمل الوورد والإكسل).", img: "https://cdn-icons-png.flaticon.com/512/732/732220.png", options: [{ optName: "مفتاح أصلي", price: 85 }] },
+  { id: 15, name: "اشتراك كانفا برو (Canva)", desc: "دخول على حساب كانفا برو لمدة سنة كاملة بكل الميزات.", img: "https://cdn-icons-png.flaticon.com/512/5968/5968705.png", options: [{ optName: "سنة كاملة", price: 45 }] }
 ];
 
 const defaultSettings = {
@@ -369,14 +384,14 @@ const defaultSettings = {
   email: "support@cardstore.com"
 };
 
-// غيرنا اسم الذاكرة لـ V6 عشان نمسح كل الصور القديمة ونجبر المتصفح يجيب الجديدة
-let products = JSON.parse(localStorage.getItem('cardStoreV6_Products')) || defaultData;
-let settings = JSON.parse(localStorage.getItem('cardStoreV6_Settings')) || defaultSettings;
-let favorites = JSON.parse(localStorage.getItem('cardStoreV6_Favs')) || [];
+let products = JSON.parse(localStorage.getItem('cardStoreV7_Products')) || defaultData;
+let settings = JSON.parse(localStorage.getItem('cardStoreV7_Settings')) || defaultSettings;
+let favorites = JSON.parse(localStorage.getItem('cardStoreV7_Favs')) || [];
 let cart = [];
 let activeProduct = null;
 let selectedOptionIndex = -1;
 
+// --- 2. تطبيق الإعدادات (Settings Engine) ---
 function applySettings() {
   document.getElementById('siteTitle').innerText = settings.siteName;
   document.getElementById('headerSiteName').innerText = settings.siteName;
@@ -405,6 +420,7 @@ function adjustColor(color, percent) {
   return "#"+RR+GG+BB;
 }
 
+// --- 3. عرض المنتجات (Products Engine) ---
 function renderStore() {
   const c = document.getElementById('store-container');
   c.innerHTML = '<h2 class="section-title">🛒 جميع المنتجات المتوفرة</h2><section class="products" id="prodList"></section>';
@@ -425,7 +441,7 @@ function renderStore() {
         <img src="${p.img}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/748/748137.png'" onclick="openProductPage(${p.id})">
         <div class="card-content">
           <h3>${p.name}</h3>
-          <button onclick="openProductPage(${p.id})">عرض التفاصيل <i class="fa-solid fa-eye"></i></button>
+          <button class="add-btn" onclick="openProductPage(${p.id})">عرض التفاصيل <i class="fa-solid fa-eye"></i></button>
         </div>
       </div>
     `;
@@ -442,7 +458,7 @@ function toggleFav(e, id) {
     favorites.push(id);
     showToast('تمت الإضافة للمفضلة ❤️');
   }
-  localStorage.setItem('cardStoreV6_Favs', JSON.stringify(favorites));
+  localStorage.setItem('cardStoreV7_Favs', JSON.stringify(favorites));
   renderStore();
 }
 
@@ -530,6 +546,7 @@ function processPayment() {
 }
 function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
 
+// --- 4. لوحة الإدارة (Admin Engine) ---
 const logo = document.getElementById('secretLogo');
 const loginModal = document.getElementById('loginModal');
 let pressTimer;
@@ -582,7 +599,7 @@ function saveSettings() {
   settings.whatsapp = document.getElementById('setWhatsApp').value;
   settings.email = document.getElementById('setEmail').value;
   
-  localStorage.setItem('cardStoreV6_Settings', JSON.stringify(settings));
+  localStorage.setItem('cardStoreV7_Settings', JSON.stringify(settings));
   applySettings();
   showToast('تم حفظ الإعدادات بنجاح!');
 }
@@ -615,7 +632,7 @@ function addProductAdmin() {
   
   products.push({ id: Date.now(), name: n, desc: desc, img: img, options: optionsArray });
   
-  localStorage.setItem('cardStoreV6_Products', JSON.stringify(products));
+  localStorage.setItem('cardStoreV7_Products', JSON.stringify(products));
   renderStore(); renderAdmin();
   
   document.getElementById('newName').value = ''; document.getElementById('newImg').value = ''; document.getElementById('newDesc').value = '';
@@ -629,7 +646,7 @@ function addProductAdmin() {
 function del(id) {
   if(!confirm('هل تريد حذف هذا المنتج؟')) return;
   products = products.filter(i => i.id !== id);
-  localStorage.setItem('cardStoreV6_Products', JSON.stringify(products));
+  localStorage.setItem('cardStoreV7_Products', JSON.stringify(products));
   renderStore(); renderAdmin();
   showToast('تم الحذف!');
 }
@@ -638,8 +655,8 @@ function resetStore() {
   if(!confirm('تحذير: سيتم مسح كل المنتجات والإعدادات. هل أنت متأكد؟')) return;
   products = [...defaultData];
   settings = {...defaultSettings};
-  localStorage.setItem('cardStoreV6_Products', JSON.stringify(products));
-  localStorage.setItem('cardStoreV6_Settings', JSON.stringify(settings));
+  localStorage.setItem('cardStoreV7_Products', JSON.stringify(products));
+  localStorage.setItem('cardStoreV7_Settings', JSON.stringify(settings));
   applySettings(); renderStore(); renderAdmin();
   showToast('تم تصفير المتجر!');
 }
