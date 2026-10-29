@@ -60,9 +60,16 @@
   .card button { margin-top: auto; width: 100%; background: var(--success); color: #fff; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; transition: var(--transition);}
   .card button:hover { background: #009e7e; transform: scale(1.02); }
   
-  /* زر المفضلة */
-  .fav-btn { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.5); color: #fff; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; transition: var(--transition); display: flex; justify-content: center; align-items: center;}
-  .fav-btn.active { color: var(--danger); }
+  /* زر المفضلة (مخفي ويطلع بالماوس) */
+  .fav-btn { 
+    position: absolute; top: 10px; left: 10px; 
+    background: rgba(0,0,0,0.6); color: #fff; border: none; 
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer; 
+    transition: 0.3s; display: flex; justify-content: center; align-items: center;
+    font-size: 14px; opacity: 0; 
+  }
+  .card:hover .fav-btn { opacity: 1; } /* يظهر عند مرور الماوس */
+  .fav-btn.active { color: var(--danger); opacity: 1; } /* يظل ظاهر لو مفضل */
 
   /* Product Page (Full Screen) */
   #productPage { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 500; overflow-y: auto; display: none; flex-direction: column; }
@@ -154,17 +161,14 @@
 
 <header>
   <div class="header-right">
-    <!-- الثغرة السرية (الشعار) -->
     <div class="logo" id="secretLogo">
       <i class="fa-solid fa-bolt"></i> <span id="headerSiteName">CardStore</span>
     </div>
-    <!-- زر الدعم للعميل -->
     <button class="support-btn" onclick="document.getElementById('supportModal').classList.add('active')">
       <i class="fa-solid fa-headset"></i> الدعم
     </button>
   </div>
 
-  <!-- شريط البحث -->
   <div class="search-box">
     <i class="fa-solid fa-search"></i>
     <input type="text" id="searchInput" placeholder="ابحث عن منتج..." onkeyup="filterProducts()">
@@ -271,7 +275,6 @@
       <button class="modal-close-btn" onclick="logoutAdmin()"><i class="fa-solid fa-xmark"></i></button>
     </div>
     
-    <!-- تبويبات الإدارة -->
     <div class="admin-tabs">
       <button class="admin-tab-btn active" onclick="switchTab('tab-settings')">إعدادات المتجر</button>
       <button class="admin-tab-btn" onclick="switchTab('tab-products')">المنتجات</button>
@@ -284,10 +287,10 @@
       <label style="font-size:14px; color:var(--text-muted);">اسم المتجر (يظهر فوق):</label>
       <input type="text" id="setSiteName">
       
-      <label style="font-size:14px; color:var(--text-muted);">عنوان الصفحة الرئيسية (Hero Title):</label>
+      <label style="font-size:14px; color:var(--text-muted);">عنوان الصفحة الرئيسية:</label>
       <input type="text" id="setHeroTitle">
       
-      <label style="font-size:14px; color:var(--text-muted);">وصف الصفحة الرئيسية (Hero Desc):</label>
+      <label style="font-size:14px; color:var(--text-muted);">وصف الصفحة الرئيسية:</label>
       <input type="text" id="setHeroDesc">
 
       <label style="font-size:14px; color:var(--text-muted);">لون المتجر الأساسي:</label>
@@ -301,7 +304,7 @@
       </select>
 
       <h4 style="color:var(--primary); margin-bottom:15px; margin-top:20px;">بيانات الدعم</h4>
-      <label style="font-size:14px; color:var(--text-muted);">رقم الواتساب (بدون أصفار أو رموز، يبدأ بـ 966):</label>
+      <label style="font-size:14px; color:var(--text-muted);">رقم الواتساب (يبدأ بـ 966):</label>
       <input type="text" id="setWhatsApp">
       
       <label style="font-size:14px; color:var(--text-muted);">الإيميل للدعم:</label>
@@ -353,21 +356,21 @@
 <script>
 // --- 1. البيانات الأساسية (Database) ---
 const defaultData = [
-  { id: 1, name: "شحن شدات ببجي", desc: "احصل على شدات ببجي فوراً وبأفضل سعر. يتم التسليم خلال ثواني عبر الكود المباشر.", img: "https://cdn-icons-png.flaticon.com/512/5988/5988417.png", options: [{ optName: "60 شدة", price: 4 }, { optName: "325 شدة", price: 19 }, { optName: "660 شدة", price: 38 }, { optName: "1800 شدة", price: 95 }] },
-  { id: 2, name: "شحن جواهر فري فاير", desc: "شحن جواهر فري فاير بشكل آمن وسريع. يدعم جميع السيرفرات.", img: "https://cdn-icons-png.flaticon.com/512/7950/7950374.png", options: [{ optName: "100 جوهرة", price: 5 }, { optName: "520 جوهرة", price: 35 }, { optName: "1080 جوهرة", price: 65 }] },
-  { id: 3, name: "شحن روبلوكس (Robux)", desc: "شحن شدات روبلوكس لحسابك مباشرة. تسليم فوري وآمن 100%.", img: "https://cdn-icons-png.flaticon.com/512/9143/9143950.png", options: [{ optName: "400 روبوكس", price: 20 }, { optName: "800 روبوكس", price: 40 }, { optName: "1700 روبوكس", price: 80 }] },
-  { id: 4, name: "شحن ماين كرافت (Minecoin)", desc: "شحن عملات ماين كرافت لشراء السكنات والإضافات.", img: "https://cdn-icons-png.flaticon.com/512/8151/8151615.png", options: [{ optName: "1720 عملة", price: 40 }, { optName: "3500 عملة", price: 75 }] },
-  { id: 5, name: "بطاقة جوجل بلاي", desc: "بطاقة جوجل بلاي أمريكية أصلية. صالحة لشراء التطبيقات، الألعاب، والاشتراكات.", img: "https://cdn-icons-png.flaticon.com/512/888/888846.png", options: [{ optName: "فئة 10$", price: 40 }, { optName: "فئة 25$", price: 95 }, { optName: "فئة 50$", price: 185 }] },
-  { id: 6, name: "بطاقة آيتونز (iTunes)", desc: "بطاقة آيتونز أمريكية لشراء تطبيقات الآيفون والاشتراكات.", img: "https://cdn-icons-png.flaticon.com/512/179/179309.png", options: [{ optName: "فئة 10$", price: 42 }, { optName: "فئة 25$", price: 100 }, { optName: "فئة 50$", price: 195 }] },
-  { id: 7, name: "بطاقة ستيم (Steam)", desc: "شحن محفظة ستيم لشراء الألعاب. كود أمريكي.", img: "https://cdn-icons-png.flaticon.com/512/5968/5968360.png", options: [{ optName: "فئة 20$", price: 85 }, { optName: "فئة 50$", price: 200 }] },
-  { id: 8, name: "بطاقة بلايستيشن (PSN)", desc: "بطاقة شبكة بلايستيشن لشراء الألعاب أو الاشتراكات.", img: "https://cdn-icons-png.flaticon.com/512/5968/5968306.png", options: [{ optName: "فئة 10$", price: 45 }, { optName: "فئة 25$", price: 105 }, { optName: "فئة 50$", price: 200 }] },
-  { id: 9, name: "اشتراك نتفليكس (Netflix)", desc: "اشتراك نتفليكس شهر كامل (شاشة واحدة). حساب خاص ومضمون.", img: "https://cdn-icons-png.flaticon.com/512/732/732228.png", options: [{ optName: "شهر واحد", price: 35 }, { optName: "3 أشهر", price: 90 }] },
-  { id: 10, name: "اشتراك سبوتيفاي (Spotify)", desc: "اشتراك سبوتيفاي بريميوم للاستماع بدون إعلانات وتحكم كامل.", img: "https://cdn-icons-png.flaticon.com/512/174/174872.png", options: [{ optName: "شهر واحد", price: 25 }, { optName: "6 أشهر", price: 120 }] },
-  { id: 11, name: "اشتراك شاهد VIP", desc: "اشتراك شاهد VIP لمشاهدة المسلسلات والأفلام الحصرية.", img: "https://cdn-icons-png.flaticon.com/512/10691/10691837.png", options: [{ optName: "شهر واحد", price: 35 }, { optName: "3 أشهر", price: 90 }] },
-  { id: 12, name: "اشتراك يوتيوب بريميوم", desc: "مشاهدة يوتيوب بدون إعلانات مع تشغيل في الخلفية.", img: "https://cdn-icons-png.flaticon.com/512/1384/1384060.png", options: [{ optName: "شهر واحد", price: 20 }, { optName: "3 أشهر", price: 50 }] },
-  { id: 13, name: "ويندوز 11 برو", desc: "مفتاح تنشيط ويندوز 11 برو أصلي ومدى الحياة.", img: "https://cdn-icons-png.flaticon.com/512/888/888879.png", options: [{ optName: "مفتاح أصلي", price: 60 }] },
-  { id: 14, name: "أوفيس 2021 برو بلس", desc: "مفتاح تنشيط أوفيس 2021 برو بلس (يشمل الوورد والإكسل).", img: "https://cdn-icons-png.flaticon.com/512/732/732220.png", options: [{ optName: "مفتاح أصلي", price: 85 }] },
-  { id: 15, name: "اشتراك كانفا برو (Canva)", desc: "دخول على حساب كانفا برو لمدة سنة كاملة بكل الميزات.", img: "https://cdn-icons-png.flaticon.com/512/5968/5968705.png", options: [{ optName: "سنة كاملة", price: 45 }] }
+  { id: 1, name: "شحن شدات ببجي", desc: "احصل على شدات ببجي فوراً وبأفضل سعر. يتم التسليم خلال ثواني عبر الكود المباشر.", img: "https://upload.wikimedia.org/wikipedia/en/thumb/4/44/PlayerUnknown%27s_Battlegrounds_Mobile_Logo.png/220px-PlayerUnknown%27s_Battlegrounds_Mobile_Logo.png", options: [{ optName: "60 شدة", price: 4 }, { optName: "325 شدة", price: 19 }, { optName: "660 شدة", price: 38 }, { optName: "1800 شدة", price: 95 }] },
+  { id: 2, name: "شحن جواهر فري فاير", desc: "شحن جواهر فري فاير بشكل آمن وسريع. يدعم جميع السيرفرات.", img: "https://upload.wikimedia.org/wikipedia/en/thumb/3/3e/Free_Fire_Logo.png/220px-Free_Fire_Logo.png", options: [{ optName: "100 جوهرة", price: 5 }, { optName: "520 جوهرة", price: 35 }, { optName: "1080 جوهرة", price: 65 }] },
+  { id: 3, name: "شحن روبلوكس (Robux)", desc: "شحن شدات روبلوكس لحسابك مباشرة. تسليم فوري وآمن 100%.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Roblox_player_icon_black.svg/200px-Roblox_player_icon_black.svg.png", options: [{ optName: "400 روبوكس", price: 20 }, { optName: "800 روبوكس", price: 40 }, { optName: "1700 روبوكس", price: 80 }] },
+  { id: 4, name: "شحن ماين كرافت (Minecoin)", desc: "شحن عملات ماين كرافت لشراء السكنات والإضافات.", img: "https://upload.wikimedia.org/wikipedia/en/thumb/5/51/Minecraft_cover.png/200px-Minecraft_cover.png", options: [{ optName: "1720 عملة", price: 40 }, { optName: "3500 عملة", price: 75 }] },
+  { id: 5, name: "بطاقة جوجل بلاي", desc: "بطاقة جوجل بلاي أمريكية أصلية. صالحة لشراء التطبيقات، الألعاب، والاشتراكات.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Google_Play_Store_badge_EN.svg/220px-Google_Play_Store_badge_EN.svg.png", options: [{ optName: "فئة 10$", price: 40 }, { optName: "فئة 25$", price: 95 }, { optName: "فئة 50$", price: 185 }] },
+  { id: 6, name: "بطاقة آيتونز (iTunes)", desc: "بطاقة آيتونز أمريكية لشراء تطبيقات الآيفون والاشتراكات.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/ITunes_logo.svg/200px-ITunes_logo.svg.png", options: [{ optName: "فئة 10$", price: 42 }, { optName: "فئة 25$", price: 100 }, { optName: "فئة 50$", price: 195 }] },
+  { id: 7, name: "بطاقة ستيم (Steam)", desc: "شحن محفظة ستيم لشراء الألعاب. كود أمريكي.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/200px-Steam_icon_logo.svg.png", options: [{ optName: "فئة 20$", price: 85 }, { optName: "فئة 50$", price: 200 }] },
+  { id: 8, name: "بطاقة بلايستيشن (PSN)", desc: "بطاقة شبكة بلايستيشن لشراء الألعاب أو الاشتراكات.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/PlayStation_logo.svg/220px-PlayStation_logo.svg.png", options: [{ optName: "فئة 10$", price: 45 }, { optName: "فئة 25$", price: 105 }, { optName: "فئة 50$", price: 200 }] },
+  { id: 9, name: "اشتراك نتفليكس (Netflix)", desc: "اشتراك نتفليكس شهر كامل (شاشة واحدة). حساب خاص ومضمون.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Netflix_2015_logo.svg/220px-Netflix_2015_logo.svg.png", options: [{ optName: "شهر واحد", price: 35 }, { optName: "3 أشهر", price: 90 }] },
+  { id: 10, name: "اشتراك سبوتيفاي (Spotify)", desc: "اشتراك سبوتيفاي بريميوم للاستماع بدون إعلانات وتحكم كامل.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/200px-Spotify_logo_without_text.svg.png", options: [{ optName: "شهر واحد", price: 25 }, { optName: "6 أشهر", price: 120 }] },
+  { id: 11, name: "اشتراك شاهد VIP", desc: "اشتراك شاهد VIP لمشاهدة المسلسلات والأفلام الحصرية.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Shahid_logo.png/220px-Shahid_logo.png", options: [{ optName: "شهر واحد", price: 35 }, { optName: "3 أشهر", price: 90 }] },
+  { id: 12, name: "اشتراك يوتيوب بريميوم", desc: "مشاهدة يوتيوب بدون إعلانات مع تشغيل في الخلفية.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/200px-YouTube_full-color_icon_%282017%29.svg.png", options: [{ optName: "شهر واحد", price: 20 }, { optName: "3 أشهر", price: 50 }] },
+  { id: 13, name: "ويندوز 11 برو", desc: "مفتاح تنشيط ويندوز 11 برو أصلي ومدى الحياة.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Windows_logo_-_2021_%28Black%29.svg/200px-Windows_logo_-_2021_%28Black%29.svg.png", options: [{ optName: "مفتاح أصلي", price: 60 }] },
+  { id: 14, name: "أوفيس 2021 برو بلس", desc: "مفتاح تنشيط أوفيس 2021 برو بلس (يشمل الوورد والإكسل).", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Microsoft_Office_logo_%282013%E2%80%932019%29.svg/200px-Microsoft_Office_logo_%282013%E2%80%932019%29.svg.png", options: [{ optName: "مفتاح أصلي", price: 85 }] },
+  { id: 15, name: "اشتراك كانفا برو (Canva)", desc: "دخول على حساب كانفا برو لمدة سنة كاملة بكل الميزات.", img: "https://upload.wikimedia.org/wikipedia/en/thumb/0/0b/Canva_Logo.svg/200px-Canva_Logo.svg.png", options: [{ optName: "سنة كاملة", price: 45 }] }
 ];
 
 const defaultSettings = {
@@ -396,15 +399,11 @@ function applySettings() {
   document.getElementById('supportEmail').innerText = settings.email;
   document.getElementById('footerText').innerText = `© ${new Date().getFullYear()} ${settings.siteName} - جميع الحقوق محفوظة`;
   
-  // تعديل الألوان (CSS Variables)
   document.documentElement.style.setProperty('--primary', settings.themeColor);
-  
-  // تغيير لون الأزرار الداكنة
   const darkColor = adjustColor(settings.themeColor, -20);
   document.documentElement.style.setProperty('--primary-dark', darkColor);
 }
 
-// دالة مساعدة لتغميق اللون
 function adjustColor(color, percent) {
   let R = parseInt(color.substring(1,3),16);
   let G = parseInt(color.substring(3,5),16);
@@ -412,9 +411,7 @@ function adjustColor(color, percent) {
   R = parseInt(R * (100 + percent) / 100);
   G = parseInt(G * (100 + percent) / 100);
   B = parseInt(B * (100 + percent) / 100);
-  R = (R<255)?R:255;  
-  G = (G<255)?G:255;  
-  B = (B<255)?B:255;  
+  R = (R<255)?R:255; G = (G<255)?G:255; B = (B<255)?B:255;  
   let RR = ((R.toString(16).length==1)?"0"+R.toString(16):R.toString(16));
   let GG = ((G.toString(16).length==1)?"0"+G.toString(16):G.toString(16));
   let BB = ((B.toString(16).length==1)?"0"+B.toString(16):B.toString(16));
@@ -449,9 +446,8 @@ function renderStore() {
   });
 }
 
-// المفضلة
 function toggleFav(e, id) {
-  e.stopPropagation(); // منع فتح صفحة المنتج
+  e.stopPropagation();
   const index = favorites.indexOf(id);
   if(index > -1) {
     favorites.splice(index, 1);
@@ -464,21 +460,16 @@ function toggleFav(e, id) {
   renderStore();
 }
 
-// البحث
 function filterProducts() {
   const query = document.getElementById('searchInput').value.toLowerCase();
   const cards = document.querySelectorAll('.card');
   cards.forEach(card => {
     const name = card.getAttribute('data-name').toLowerCase();
-    if(name.includes(query)) {
-      card.style.display = 'flex';
-    } else {
-      card.style.display = 'none';
-    }
+    if(name.includes(query)) { card.style.display = 'flex'; } 
+    else { card.style.display = 'none'; }
   });
 }
 
-// صفحة المنتج
 function openProductPage(id) {
   activeProduct = products.find(p => p.id === id);
   if(!activeProduct) return;
@@ -525,9 +516,7 @@ function addToCartFromPage() {
   if(existing) existing.qty++;
   else cart.push(cartItem);
   
-  updateCart();
-  showToast('تمت الإضافة للسلة!');
-  closeProductPage();
+  updateCart(); showToast('تمت الإضافة للسلة!'); closeProductPage();
 }
 
 function closeProductPage() { document.getElementById('productPage').classList.remove('active'); }
@@ -577,7 +566,6 @@ function checkLogin() {
     document.getElementById('loginModal').classList.remove('active');
     document.getElementById('adminModal').classList.add('active');
     
-    // تعبئة حقول الإعدادات
     document.getElementById('setSiteName').value = settings.siteName;
     document.getElementById('setHeroTitle').value = settings.heroTitle;
     document.getElementById('setHeroDesc').value = settings.heroDesc;
