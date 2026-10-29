@@ -446,4 +446,133 @@ function openCheckout() { if(!cart.length) return; document.getElementById('chec
 function processPayment() { 
   if(!document.getElementById('custName').value) return alert('أدخل اسمك');
   document.getElementById('checkoutModal').classList.remove('active'); 
-  document.getElementById('deliveryCode').innerText = "CARD-" + Math.floor(Math.random()*10000) + "-" + Math
+  document.getElementById('deliveryCode').innerText = "CARD-" + Math.floor(Math.random()*10000) + "-" + Math.floor(Math.random()*10000); 
+  document.getElementById('successModal').classList.add('active'); 
+  cart = []; updateCart(); 
+}
+function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
+
+const logo = document.getElementById('secretLogo');
+const supportModal = document.getElementById('supportModal');
+const loginModal = document.getElementById('loginModal');
+let pressTimer;
+let isLongPress = false;
+
+logo.addEventListener('mousedown', startPress);
+logo.addEventListener('touchstart', startPress, {passive: true});
+
+function startPress(e) {
+  isLongPress = false;
+  pressTimer = setTimeout(() => {
+    isLongPress = true;
+    loginModal.classList.add('active'); 
+  }, 15000);
+}
+
+logo.addEventListener('mouseup', endPress);
+logo.addEventListener('mouseleave', endPress);
+logo.addEventListener('touchend', endPress);
+
+function endPress(e) {
+  clearTimeout(pressTimer);
+  if (!isLongPress) {
+    supportModal.classList.add('active'); 
+  }
+}
+
+function checkLogin() {
+  const user = document.getElementById('adminUser').value;
+  const pass = document.getElementById('adminPass').value;
+  
+  if(user === 'THAMER133' && pass === 'TtHh112233445566') {
+    document.getElementById('loginModal').classList.remove('active');
+    document.getElementById('adminModal').classList.add('active');
+    renderAdmin();
+    document.getElementById('adminUser').value = '';
+    document.getElementById('adminPass').value = '';
+  } else {
+    alert('خطأ في اسم المستخدم أو كلمة المرور!');
+  }
+}
+function logoutAdmin() { document.getElementById('adminModal').classList.remove('active'); }
+
+function renderAdmin() {
+  let h = '';
+  products.forEach(p => {
+    let opts = p.options.map(o => `<small>${o.optName}: ${o.price}ر.س</small>`).join(' | ');
+    h += `<div class="admin-list-item"><div><strong>${p.name}</strong><br>${opts}</div><button onclick="del(${p.id})" style="color:var(--danger); background:none; border:none; cursor:pointer; font-size:16px;"><i class="fa-solid fa-trash"></i></button></div>`
+  });
+  document.getElementById('adminList').innerHTML = h || '<p style="color:var(--text-muted);">لا توجد منتجات</p>';
+}
+
+function addProductAdmin() {
+  const n = document.getElementById('newName').value;
+  const img = document.getElementById('newImg').value || 'https://cdn-icons-png.flaticon.com/512/748/748137.png';
+  const desc = document.getElementById('newDesc').value;
+  
+  const optName1 = document.getElementById('optName1').value;
+  const optPrice1 = parseFloat(document.getElementById('optPrice1').value);
+  
+  if(!n || !optName1 || !optPrice1) {
+    return alert('يجب إدخال اسم المنتج، وخيار واحد على الأقل مع سعره.');
+  }
+  
+  let optionsArray = [{ optName: optName1, price: optPrice1 }];
+  
+  const optName2 = document.getElementById('optName2').value;
+  const optPrice2 = parseFloat(document.getElementById('optPrice2').value);
+  if(optName2 && optPrice2) optionsArray.push({ optName: optName2, price: optPrice2 });
+  
+  const optName3 = document.getElementById('optName3').value;
+  const optPrice3 = parseFloat(document.getElementById('optPrice3').value);
+  if(optName3 && optPrice3) optionsArray.push({ optName: optName3, price: optPrice3 });
+  
+  const optName4 = document.getElementById('optName4').value;
+  const optPrice4 = parseFloat(document.getElementById('optPrice4').value);
+  if(optName4 && optPrice4) optionsArray.push({ optName: optName4, price: optPrice4 });
+  
+  products.push({
+    id: Date.now(),
+    name: n,
+    desc: desc,
+    img: img,
+    options: optionsArray
+  });
+  
+  localStorage.setItem('cardStoreDataV5', JSON.stringify(products));
+  renderStore(); renderAdmin();
+  
+  document.getElementById('newName').value = '';
+  document.getElementById('newImg').value = '';
+  document.getElementById('newDesc').value = '';
+  document.getElementById('optName1').value = '';
+  document.getElementById('optPrice1').value = '';
+  document.getElementById('optName2').value = '';
+  document.getElementById('optPrice2').value = '';
+  document.getElementById('optName3').value = '';
+  document.getElementById('optPrice3').value = '';
+  document.getElementById('optName4').value = '';
+  document.getElementById('optPrice4').value = '';
+  showToast('تم إضافة المنتج بنجاح!');
+}
+
+function del(id) {
+  if(!confirm('هل تريد حذف هذا المنتج؟')) return;
+  products = products.filter(i => i.id !== id);
+  localStorage.setItem('cardStoreDataV5', JSON.stringify(products));
+  renderStore(); renderAdmin();
+  showToast('تم الحذف!');
+}
+
+function resetStore() {
+  if(!confirm('تحذير: سيتم مسح كل المنتجات المضافة والعودة للافتراضي. هل أنت متأكد؟')) return;
+  products = [...defaultData];
+  localStorage.setItem('cardStoreDataV5', JSON.stringify(products));
+  renderStore(); renderAdmin();
+  showToast('تم تصفير المتجر!');
+}
+
+renderStore(); updateCart();
+</script>
+</body>
+</html>
