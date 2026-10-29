@@ -60,8 +60,8 @@
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   .modal { background: var(--surface); padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; text-align: center; max-height: 90vh; overflow-y: auto; border: 1px solid #444;}
   .modal h3 { color: var(--primary); font-size: 24px; margin-bottom: 20px; }
-  .modal input, .modal select { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #444; border-radius: 10px; background: #2a2a2a; color: var(--text); font-family: 'Tajawal'; }
-  .modal input:focus { outline: none; border-color: var(--primary); }
+  .modal input, .modal select { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #444; border-radius: 10px; background: #2a2a2a; color: var(--text); font-family: 'Tajawal'; font-size: 16px;}
+  .modal input:focus, .modal select:focus { outline: none; border-color: var(--primary); }
   .btn-close { background: var(--success); color: white; border: none; padding: 14px; border-radius: 10px; font-size: 16px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.3s;}
   .btn-close:hover { background: #009e7e; }
   .btn-danger { background: #e74c3c; }
@@ -69,6 +69,7 @@
   
   /* Admin List */
   .admin-list-item { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 10px 15px; margin-bottom: 8px; border-radius: 8px; font-size: 14px;}
+  .admin-options-inputs { background: #1a1a1a; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px dashed #444;}
   
   /* Toast */
   .toast { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; padding: 15px 25px; border-radius: 10px; z-index: 400; transform: translateY(100px); opacity: 0; transition: 0.3s; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.4);}
@@ -95,6 +96,16 @@
   <div class="cart-items-container" id="cartItems"></div>
   <div class="cart-total"><span>الإجمالي:</span><span id="total">0 ر.س</span></div>
   <button class="checkout" onclick="openCheckout()">إتمام الطلب <i class="fa-solid fa-arrow-left"></i></button>
+</div>
+
+<!-- نافذة اختيار الفئة (جديد) -->
+<div class="modal-overlay" id="selectOptionModal">
+  <div class="modal">
+    <h3 id="optProductName">اسم المنتج</h3>
+    <p style="color: var(--text-muted); margin-bottom: 15px;">اختر الفئة التي تريد شراءها:</p>
+    <select id="optSelect"></select>
+    <button class="btn-close" onclick="addSelectedToCart()">إضافة للسلة <i class="fa-solid fa-cart-plus"></i></button>
+  </div>
 </div>
 
 <!-- نافذة الدفع -->
@@ -127,67 +138,139 @@
   </div>
 </div>
 
-<!-- لوحة الإدارة -->
+<!-- لوحة الإدارة المطورة -->
 <div class="modal-overlay" id="adminModal">
   <div class="modal" style="text-align: right;">
     <h3 style="text-align: center;"><i class="fa-solid fa-user-gear"></i> بوابة الإدارة</h3>
-    <p style="text-align: center; color: var(--text-muted); margin-bottom: 20px; font-size: 14px;">أضف منتجاتك أو احذفها</p>
     
-    <input type="text" id="newName" placeholder="اسم المنتج">
-    <input type="number" id="newPrice" placeholder="السعر (ريال)">
-    <input type="text" id="newImg" placeholder="رابط الصورة (URL)">
-    <button class="btn-close" onclick="addProductAdmin()" style="margin-bottom: 25px;"><i class="fa-solid fa-plus"></i> إضافة المنتج</button>
+    <input type="text" id="newName" placeholder="اسم المنتج الرئيسي (مثلاً: شحن ببجي)">
+    <input type="text" id="newImg" placeholder="رابط الصورة (URL) - اختياري">
+    
+    <div class="admin-options-inputs">
+      <p style="font-size: 13px; color: var(--primary); margin-bottom: 10px; font-weight: bold;">الخيارات والأسعار (أضف خيارين على الأقل):</p>
+      <input type="text" id="optName1" placeholder="الخيار الأول (مثلاً: 660 شدة)">
+      <input type="number" id="optPrice1" placeholder="سعر الخيار الأول">
+      <input type="text" id="optName2" placeholder="الخيار الثاني (مثلاً: 1800 شدة)">
+      <input type="number" id="optPrice2" placeholder="سعر الخيار الثاني">
+    </div>
+    
+    <button class="btn-close" onclick="addProductAdmin()" style="margin-bottom: 20px;"><i class="fa-solid fa-plus"></i> إضافة المنتج للمتجر</button>
     
     <h4 style="margin-bottom: 15px; color: var(--primary);">المنتجات الحالية:</h4>
-    <div id="adminList" style="max-height: 200px; overflow-y: auto; margin-bottom: 25px;"></div>
+    <div id="adminList" style="max-height: 200px; overflow-y: auto; margin-bottom: 20px;"></div>
     
-    <button class="btn-close btn-danger" onclick="logoutAdmin()">تسجيل الخروج</button>
+    <button class="btn-close btn-danger" onclick="resetStore()" style="margin-bottom: 10px;"><i class="fa-solid fa-rotate-right"></i> تصفير المتجر (مسح كل شيء)</button>
+    <button class="btn-close" style="background: #555;" onclick="logoutAdmin()">تسجيل الخروج</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// بيانات افتراضية (مع صور شغالة 100%)
-let categories = JSON.parse(localStorage.getItem('cardStoreData')) || [
-  { title: "🎮 شحن الألعاب", items: [
-    {id:1, name:"ببجي 660 UC", price:38, img:"https://cdn-icons-png.flaticon.com/512/5988/5988417.png"},
-    {id:2, name:"فري فاير 520 جوهرة", price:35, img:"https://cdn-icons-png.flaticon.com/512/7950/7950374.png"}
-  ]},
-  { title: "🎁 بطاقات الهدايا", items: [
-    {id:3, name:"جوجل بلاي 50$", price:185, img:"https://cdn-icons-png.flaticon.com/512/888/888846.png"},
-    {id:4, name:"آيتونز 25$", price:98, img:"https://cdn-icons-png.flaticon.com/512/179/179309.png"}
-  ]}
+// البيانات الافتراضية (كل منتج له خيارات وأسعار)
+const defaultData = [
+  { 
+    id: 1, 
+    name: "شحن شدات ببجي", 
+    img: "https://cdn-icons-png.flaticon.com/512/5988/5988417.png", 
+    options: [
+      { optName: "660 شدة", price: 38 },
+      { optName: "1800 شدة", price: 95 }
+    ] 
+  },
+  { 
+    id: 2, 
+    name: "بطاقة جوجل بلاي", 
+    img: "https://cdn-icons-png.flaticon.com/512/888/888846.png", 
+    options: [
+      { optName: "فئة 25$", price: 95 },
+      { optName: "فئة 50$", price: 185 }
+    ] 
+  }
 ];
+
+let products = JSON.parse(localStorage.getItem('cardStoreDataV2')) || defaultData;
 let cart = [];
+let currentProductSelected = null; // متغير لحفظ المنتج اللي نختار خياراته
 
 // عرض المتجر
 function renderStore() {
-  const c = document.getElementById('store-container'); c.innerHTML = '';
-  categories.forEach(cat => {
-    let h = `<h2 class="section-title">${cat.title}</h2><section class="products">`;
-    cat.items.forEach(p => {
-      // حماية الصورة: لو الرابط خرب، تطلع صورة بديلة
-      h += `<div class="card"><img src="${p.img}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/748/748137.png'"><div class="card-content"><h3>${p.name}</h3><div class="price">${p.price} ر.س</div><button onclick="addToCart(${p.id})">أضف للسلة</button></div></div>`;
-    });
-    c.innerHTML += h + `</section>`;
+  const c = document.getElementById('store-container');
+  c.innerHTML = '<h2 class="section-title">🛒 جميع المنتجات</h2><section class="products" id="prodList"></section>';
+  const prodList = document.getElementById('prodList');
+  
+  if(products.length === 0) {
+    prodList.innerHTML = '<p style="text-align:center; width:100%; color:var(--text-muted);">لا توجد منتجات حالياً.</p>';
+    return;
+  }
+
+  products.forEach(p => {
+    // نجيب أقل سعر لعرضه في الكرت
+    let minPrice = Math.min(...p.options.map(o => o.price));
+    
+    prodList.innerHTML += `
+      <div class="card">
+        <img src="${p.img}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/748/748137.png'">
+        <div class="card-content">
+          <h3>${p.name}</h3>
+          <div class="price">يبدأ من ${minPrice} ر.س</div>
+          <button onclick="openOptionModal(${p.id})">اختر الفئة <i class="fa-solid fa-list"></i></button>
+        </div>
+      </div>
+    `;
   });
 }
 
-function addToCart(id) {
-  let p = null;
-  categories.forEach(c => c.items.forEach(i => { if(i.id === id) p = i; }));
-  if(!p) return;
-  let e = cart.find(i => i.id === id);
-  if(e) e.qty++; else cart.push({...p, qty: 1});
-  updateCart(); showToast('تمت الإضافة للسلة بنجاح!');
+// فتح نافذة الخيارات
+function openOptionModal(id) {
+  currentProductSelected = products.find(p => p.id === id);
+  if(!currentProductSelected) return;
+  
+  document.getElementById('optProductName').innerText = currentProductSelected.name;
+  const select = document.getElementById('optSelect');
+  select.innerHTML = '';
+  
+  currentProductSelected.options.forEach((opt, index) => {
+    select.innerHTML += `<option value="${index}">${opt.optName} - ${opt.price} ر.س</option>`;
+  });
+  
+  document.getElementById('selectOptionModal').classList.add('active');
 }
 
+// إضافة المنتج المختار للسلة
+function addSelectedToCart() {
+  if(!currentProductSelected) return;
+  
+  const selectedIndex = document.getElementById('optSelect').value;
+  const option = currentProductSelected.options[selectedIndex];
+  
+  // ننشئ كائن جديد يمثل الخيار المختار
+  const cartItem = {
+    id: currentProductSelected.id + "-" + selectedIndex, // معرف فريد للخيار
+    name: currentProductSelected.name + " - " + option.optName,
+    price: option.price,
+    img: currentProductSelected.img,
+    qty: 1
+  };
+  
+  const existing = cart.find(i => i.id === cartItem.id);
+  if(existing) {
+    existing.qty++;
+  } else {
+    cart.push(cartItem);
+  }
+  
+  updateCart();
+  showToast('تمت الإضافة للسلة بنجاح!');
+  document.getElementById('selectOptionModal').classList.remove('active');
+}
+
+// تحديث السلة
 function updateCart() {
   let h = ''; let t = 0;
   cart.forEach(i => { 
     t += i.price * i.qty; 
-    h += `<div class="cart-item"><div><strong>${i.name}</strong><br><small style="color:var(--text-muted)">${i.price} ر.س × ${i.qty}</small></div><span class="remove" onclick="removeCart(${i.id})"><i class="fa-solid fa-trash"></i></span></div>`; 
+    h += `<div class="cart-item"><div><strong>${i.name}</strong><br><small style="color:var(--text-muted)">${i.price} ر.س × ${i.qty}</small></div><span class="remove" onclick="removeCart('${i.id}')"><i class="fa-solid fa-trash"></i></span></div>`; 
   });
   document.getElementById('cartItems').innerHTML = h || '<p style="text-align:center; color:var(--text-muted); margin-top:20px;">السلة فارغة</p>';
   document.getElementById('total').innerText = t + ' ر.س';
@@ -214,7 +297,7 @@ document.getElementById('secretLogo').onclick = () => {
     document.getElementById('loginModal').classList.add('active'); 
     clicks = 0; 
   }
-  setTimeout(() => { clicks = 0; }, 2000); // تصفير العداد لو ما كملت 5 ضغطات بسرعة
+  setTimeout(() => { clicks = 0; }, 2000);
 };
 
 // --- تسجيل الدخول ---
@@ -232,39 +315,70 @@ function checkLogin() {
     alert('خطأ في اسم المستخدم أو كلمة المرور!');
   }
 }
-
 function logoutAdmin() { document.getElementById('adminModal').classList.remove('active'); }
 
 // --- لوحة الإدارة ---
 function renderAdmin() {
   let h = '';
-  categories.forEach(c => c.items.forEach(i => h += `<div class="admin-list-item"><span>${i.name} - ${i.price} ر.س</span><button onclick="del(${i.id})" style="color:#e74c3c; background:none; border:none; cursor:pointer; font-size:16px;"><i class="fa-solid fa-trash"></i></button></div>`));
+  products.forEach(p => {
+    let opts = p.options.map(o => `<small>${o.optName}: ${o.price}ر.س</small>`).join(' | ');
+    h += `<div class="admin-list-item"><div><strong>${p.name}</strong><br>${opts}</div><button onclick="del(${p.id})" style="color:#e74c3c; background:none; border:none; cursor:pointer; font-size:16px;"><i class="fa-solid fa-trash"></i></button></div>`
+  });
   document.getElementById('adminList').innerHTML = h || '<p style="color:var(--text-muted);">لا توجد منتجات</p>';
 }
 
 function addProductAdmin() {
   const n = document.getElementById('newName').value;
-  const p = document.getElementById('newPrice').value;
   const img = document.getElementById('newImg').value || 'https://cdn-icons-png.flaticon.com/512/748/748137.png';
   
-  if(!n || !p) return alert('أدخل اسم المنتج والسعر');
+  const opt1Name = document.getElementById('optName1').value;
+  const opt1Price = parseFloat(document.getElementById('optPrice1').value);
+  const opt2Name = document.getElementById('optName2').value;
+  const opt2Price = parseFloat(document.getElementById('optPrice2').value);
   
-  categories[0].items.push({id: Date.now(), name: n, price: p, img: img});
-  localStorage.setItem('cardStoreData', JSON.stringify(categories));
+  if(!n || !opt1Name || !opt1Price) {
+    return alert('يجب إدخال اسم المنتج، وخيار واحد على الأقل مع سعره.');
+  }
+  
+  let optionsArray = [{ optName: opt1Name, price: opt1Price }];
+  if(opt2Name && opt2Price) {
+    optionsArray.push({ optName: opt2Name, price: opt2Price });
+  }
+  
+  products.push({
+    id: Date.now(),
+    name: n,
+    img: img,
+    options: optionsArray
+  });
+  
+  localStorage.setItem('cardStoreDataV2', JSON.stringify(products));
   renderStore(); renderAdmin();
   
+  // تفريغ الحقول
   document.getElementById('newName').value = '';
-  document.getElementById('newPrice').value = '';
   document.getElementById('newImg').value = '';
+  document.getElementById('optName1').value = '';
+  document.getElementById('optPrice1').value = '';
+  document.getElementById('optName2').value = '';
+  document.getElementById('optPrice2').value = '';
   showToast('تم إضافة المنتج بنجاح!');
 }
 
 function del(id) {
   if(!confirm('هل تريد حذف هذا المنتج؟')) return;
-  categories.forEach(c => c.items = c.items.filter(i => i.id !== id));
-  localStorage.setItem('cardStoreData', JSON.stringify(categories));
+  products = products.filter(i => i.id !== id);
+  localStorage.setItem('cardStoreDataV2', JSON.stringify(products));
   renderStore(); renderAdmin();
   showToast('تم الحذف!');
+}
+
+function resetStore() {
+  if(!confirm('تحذير: سيتم مسح كل المنتجات المضافة والعودة للافتراضي. هل أنت متأكد؟')) return;
+  products = [...defaultData];
+  localStorage.setItem('cardStoreDataV2', JSON.stringify(products));
+  renderStore(); renderAdmin();
+  showToast('تم تصفير المتجر!');
 }
 
 // التشغيل
