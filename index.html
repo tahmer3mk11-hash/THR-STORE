@@ -15,13 +15,16 @@
     --surface: #1e1e1e;
     --text: #f5f6fa; 
     --text-muted: #a4b0be;
+    --danger: #e74c3c;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Tajawal', sans-serif; }
   body { background: var(--bg); color: var(--text); overflow-x: hidden; }
   
   /* Header */
   header { background: var(--surface); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-  .logo { font-size: 26px; font-weight: 900; color: var(--primary); display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; text-shadow: 0 0 10px rgba(142, 68, 173, 0.5);}
+  .logo { font-size: 26px; font-weight: 900; color: var(--primary); display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; text-shadow: 0 0 10px rgba(142, 68, 173, 0.5); position: relative;}
+  .logo:active { transform: scale(0.95); } /* تأثير عند الضغط المطول */
+  
   .cart-btn { background: var(--primary); color: #fff; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; display: flex; align-items: center; gap: 8px;}
   .cart-btn:hover { background: var(--primary-dark); transform: scale(1.05); }
   
@@ -38,7 +41,6 @@
   .card img { width: 100%; height: 150px; object-fit: contain; background: #2a2a2a; padding: 20px; }
   .card-content { padding: 20px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; }
   .card h3 { font-size: 18px; margin-bottom: 10px; font-weight: 700; color: var(--text); }
-  .card .price { color: var(--primary); font-weight: 900; font-size: 22px; margin: 10px 0 15px; }
   .card button { margin-top: auto; width: 100%; background: var(--success); color: #fff; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s;}
   .card button:hover { background: #009e7e; transform: scale(1.02); }
   
@@ -46,25 +48,30 @@
   .cart-panel { position: fixed; top: 0; left: -450px; width: 380px; height: 100%; background: var(--surface); z-index: 200; padding: 25px; transition: 0.4s ease; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 5px 0 25px rgba(0,0,0,0.8); border-right: 1px solid #333;}
   .cart-panel.open { left: 0; }
   .cart-panel h2 { margin-bottom: 20px; color: var(--primary); border-bottom: 2px solid #333; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;}
-  .close-cart { cursor: pointer; color: #e74c3c; font-size: 22px; }
+  .close-cart { cursor: pointer; color: var(--danger); font-size: 22px; }
   .cart-items-container { flex-grow: 1; overflow-y: auto; }
   .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #333; }
-  .cart-item .remove { color: #e74c3c; cursor: pointer; padding: 5px; }
+  .cart-item .remove { color: var(--danger); cursor: pointer; padding: 5px; }
   .cart-total { margin-top: 20px; font-size: 22px; font-weight: 900; display: flex; justify-content: space-between; border-top: 2px solid #333; padding-top: 20px; color: var(--text);}
   .checkout { width: 100%; background: var(--primary); color: #fff; border: none; padding: 16px; border-radius: 12px; margin-top: 20px; font-size: 18px; cursor: pointer; font-weight: bold; transition: 0.3s;}
   .checkout:hover { background: var(--primary-dark); }
   
   /* Modals */
-  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 300; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
   .modal-overlay.active { display: flex; animation: fadeIn 0.3s; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .modal { background: var(--surface); padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; text-align: center; max-height: 90vh; overflow-y: auto; border: 1px solid #444;}
-  .modal h3 { color: var(--primary); font-size: 24px; margin-bottom: 20px; }
+  .modal { background: var(--surface); padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; text-align: center; max-height: 90vh; overflow-y: auto; border: 1px solid #444; position: relative;}
+  
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px;}
+  .modal-header h3 { color: var(--primary); font-size: 22px; margin: 0; }
+  .modal-close-btn { background: none; border: none; color: var(--danger); font-size: 24px; cursor: pointer; transition: 0.2s;}
+  .modal-close-btn:hover { transform: scale(1.2); }
+
   .modal input, .modal select { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #444; border-radius: 10px; background: #2a2a2a; color: var(--text); font-family: 'Tajawal'; font-size: 16px;}
   .modal input:focus, .modal select:focus { outline: none; border-color: var(--primary); }
   .btn-close { background: var(--success); color: white; border: none; padding: 14px; border-radius: 10px; font-size: 16px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.3s;}
   .btn-close:hover { background: #009e7e; }
-  .btn-danger { background: #e74c3c; }
+  .btn-danger { background: var(--danger); }
   .btn-danger:hover { background: #c0392b; }
   
   /* Admin List */
@@ -74,12 +81,19 @@
   /* Toast */
   .toast { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; padding: 15px 25px; border-radius: 10px; z-index: 400; transform: translateY(100px); opacity: 0; transition: 0.3s; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.4);}
   .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* Secret Counter */
+  #secretCounter { position: absolute; top: 50px; right: 10px; background: var(--danger); color: white; padding: 5px 10px; border-radius: 5px; font-size: 14px; display: none; z-index: 101;}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo" id="secretLogo"><i class="fa-solid fa-bolt"></i> CardStore</div>
+  <!-- الشعار: ضغطة واحدة = دعم، ضغط مطول 15 ثانية = إدارة -->
+  <div class="logo" id="secretLogo">
+    <i class="fa-solid fa-bolt"></i> CardStore
+    <span id="secretCounter">15</span>
+  </div>
   <button class="cart-btn" onclick="toggleCart()"><i class="fa-solid fa-cart-shopping"></i> السلة (<span id="count">0</span>)</button>
 </header>
 
@@ -98,20 +112,39 @@
   <button class="checkout" onclick="openCheckout()">إتمام الطلب <i class="fa-solid fa-arrow-left"></i></button>
 </div>
 
-<!-- نافذة اختيار الفئة (جديد) -->
+<!-- نافذة اختيار الفئة (مع زر إغلاق) -->
 <div class="modal-overlay" id="selectOptionModal">
   <div class="modal">
-    <h3 id="optProductName">اسم المنتج</h3>
+    <div class="modal-header">
+      <h3 id="optProductName">اسم المنتج</h3>
+      <button class="modal-close-btn" onclick="document.getElementById('selectOptionModal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
     <p style="color: var(--text-muted); margin-bottom: 15px;">اختر الفئة التي تريد شراءها:</p>
     <select id="optSelect"></select>
     <button class="btn-close" onclick="addSelectedToCart()">إضافة للسلة <i class="fa-solid fa-cart-plus"></i></button>
   </div>
 </div>
 
+<!-- نافذة الدعم الفني (للعميل) -->
+<div class="modal-overlay" id="supportModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-headset"></i> الدعم الفني</h3>
+      <button class="modal-close-btn" onclick="document.getElementById('supportModal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <p style="margin-bottom: 20px; color: var(--text-muted);">أهلاً بك! كيف يمكننا مساعدتك اليوم؟</p>
+    <a href="https://wa.me/966500000000" target="_blank" style="display:block; background: #25D366; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: bold; margin-bottom: 10px;"><i class="fa-brands fa-whatsapp"></i> تواصل عبر واتساب</a>
+    <p style="font-size: 14px; color: var(--text-muted);">أو راسلنا على: support@cardstore.com</p>
+  </div>
+</div>
+
 <!-- نافذة الدفع -->
 <div class="modal-overlay" id="checkoutModal">
   <div class="modal">
-    <h3><i class="fa-solid fa-credit-card"></i> إتمام الطلب</h3>
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-credit-card"></i> إتمام الطلب</h3>
+      <button class="modal-close-btn" onclick="document.getElementById('checkoutModal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
     <input type="text" id="custName" placeholder="الاسم بالكامل">
     <input type="email" id="custEmail" placeholder="البريد الإلكتروني">
     <button class="btn-close" onclick="processPayment()">تأكيد الدفع</button>
@@ -121,37 +154,50 @@
 <!-- نافذة نجاح الدفع -->
 <div class="modal-overlay" id="successModal">
   <div class="modal">
-    <h3 style="color:var(--success);"><i class="fa-solid fa-check-circle"></i> تم بنجاح!</h3>
+    <h3 style="color:var(--success); margin-bottom:20px;"><i class="fa-solid fa-check-circle"></i> تم بنجاح!</h3>
     <p style="margin-bottom: 20px; color: var(--text-muted);">شكراً لك، هذا كود البطاقة الخاص بك:</p>
     <div id="deliveryCode" style="background:#2a2a2a; padding:20px; border-radius:10px; font-family:monospace; font-size:22px; font-weight:bold; margin-bottom:20px; border:2px dashed var(--primary); color: var(--primary);"></div>
     <button class="btn-close" onclick="document.getElementById('successModal').classList.remove('active')">إغلاق</button>
   </div>
 </div>
 
-<!-- نافذة تسجيل الدخول -->
+<!-- نافذة تسجيل الدخول للإدارة -->
 <div class="modal-overlay" id="loginModal">
   <div class="modal">
-    <h3><i class="fa-solid fa-lock"></i> دخول الإدارة</h3>
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-lock"></i> دخول الإدارة</h3>
+      <button class="modal-close-btn" onclick="document.getElementById('loginModal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
     <input type="text" id="adminUser" placeholder="اسم المستخدم">
     <input type="password" id="adminPass" placeholder="كلمة المرور">
     <button class="btn-close" onclick="checkLogin()">دخول</button>
   </div>
 </div>
 
-<!-- لوحة الإدارة المطورة -->
+<!-- لوحة الإدارة -->
 <div class="modal-overlay" id="adminModal">
   <div class="modal" style="text-align: right;">
-    <h3 style="text-align: center;"><i class="fa-solid fa-user-gear"></i> بوابة الإدارة</h3>
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-user-gear"></i> بوابة الإدارة</h3>
+      <button class="modal-close-btn" onclick="logoutAdmin()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
     
-    <input type="text" id="newName" placeholder="اسم المنتج الرئيسي (مثلاً: شحن ببجي)">
+    <input type="text" id="newName" placeholder="اسم المنتج (مثلاً: شحن ببجي)">
     <input type="text" id="newImg" placeholder="رابط الصورة (URL) - اختياري">
     
     <div class="admin-options-inputs">
-      <p style="font-size: 13px; color: var(--primary); margin-bottom: 10px; font-weight: bold;">الخيارات والأسعار (أضف خيارين على الأقل):</p>
-      <input type="text" id="optName1" placeholder="الخيار الأول (مثلاً: 660 شدة)">
-      <input type="number" id="optPrice1" placeholder="سعر الخيار الأول">
-      <input type="text" id="optName2" placeholder="الخيار الثاني (مثلاً: 1800 شدة)">
-      <input type="number" id="optPrice2" placeholder="سعر الخيار الثاني">
+      <p style="font-size: 13px; color: var(--primary); margin-bottom: 10px; font-weight: bold;">الخيارات والأسعار (أضف ما تريد):</p>
+      <input type="text" id="optName1" placeholder="الخيار 1 (مثلاً: 660 شدة)">
+      <input type="number" id="optPrice1" placeholder="سعر الخيار 1">
+      
+      <input type="text" id="optName2" placeholder="الخيار 2 (اختياري)">
+      <input type="number" id="optPrice2" placeholder="سعر الخيار 2">
+      
+      <input type="text" id="optName3" placeholder="الخيار 3 (اختياري)">
+      <input type="number" id="optPrice3" placeholder="سعر الخيار 3">
+      
+      <input type="text" id="optName4" placeholder="الخيار 4 (اختياري)">
+      <input type="number" id="optPrice4" placeholder="سعر الخيار 4">
     </div>
     
     <button class="btn-close" onclick="addProductAdmin()" style="margin-bottom: 20px;"><i class="fa-solid fa-plus"></i> إضافة المنتج للمتجر</button>
@@ -167,13 +213,15 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// البيانات الافتراضية (كل منتج له خيارات وأسعار)
+// البيانات الافتراضية
 const defaultData = [
   { 
     id: 1, 
     name: "شحن شدات ببجي", 
     img: "https://cdn-icons-png.flaticon.com/512/5988/5988417.png", 
     options: [
+      { optName: "60 شدة", price: 4 },
+      { optName: "325 شدة", price: 19 },
       { optName: "660 شدة", price: 38 },
       { optName: "1800 شدة", price: 95 }
     ] 
@@ -183,15 +231,26 @@ const defaultData = [
     name: "بطاقة جوجل بلاي", 
     img: "https://cdn-icons-png.flaticon.com/512/888/888846.png", 
     options: [
+      { optName: "فئة 10$", price: 40 },
       { optName: "فئة 25$", price: 95 },
       { optName: "فئة 50$", price: 185 }
+    ] 
+  },
+  { 
+    id: 3, 
+    name: "شحن فري فاير", 
+    img: "https://cdn-icons-png.flaticon.com/512/7950/7950374.png", 
+    options: [
+      { optName: "100 جوهرة", price: 5 },
+      { optName: "520 جوهرة", price: 35 },
+      { optName: "1080 جوهرة", price: 65 }
     ] 
   }
 ];
 
-let products = JSON.parse(localStorage.getItem('cardStoreDataV2')) || defaultData;
+let products = JSON.parse(localStorage.getItem('cardStoreDataV3')) || defaultData;
 let cart = [];
-let currentProductSelected = null; // متغير لحفظ المنتج اللي نختار خياراته
+let currentProductSelected = null;
 
 // عرض المتجر
 function renderStore() {
@@ -205,15 +264,11 @@ function renderStore() {
   }
 
   products.forEach(p => {
-    // نجيب أقل سعر لعرضه في الكرت
-    let minPrice = Math.min(...p.options.map(o => o.price));
-    
     prodList.innerHTML += `
       <div class="card">
         <img src="${p.img}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/748/748137.png'">
         <div class="card-content">
           <h3>${p.name}</h3>
-          <div class="price">يبدأ من ${minPrice} ر.س</div>
           <button onclick="openOptionModal(${p.id})">اختر الفئة <i class="fa-solid fa-list"></i></button>
         </div>
       </div>
@@ -237,35 +292,27 @@ function openOptionModal(id) {
   document.getElementById('selectOptionModal').classList.add('active');
 }
 
-// إضافة المنتج المختار للسلة
 function addSelectedToCart() {
   if(!currentProductSelected) return;
-  
   const selectedIndex = document.getElementById('optSelect').value;
   const option = currentProductSelected.options[selectedIndex];
   
-  // ننشئ كائن جديد يمثل الخيار المختار
   const cartItem = {
-    id: currentProductSelected.id + "-" + selectedIndex, // معرف فريد للخيار
+    id: currentProductSelected.id + "-" + selectedIndex,
     name: currentProductSelected.name + " - " + option.optName,
     price: option.price,
-    img: currentProductSelected.img,
     qty: 1
   };
   
   const existing = cart.find(i => i.id === cartItem.id);
-  if(existing) {
-    existing.qty++;
-  } else {
-    cart.push(cartItem);
-  }
+  if(existing) existing.qty++;
+  else cart.push(cartItem);
   
   updateCart();
-  showToast('تمت الإضافة للسلة بنجاح!');
+  showToast('تمت الإضافة للسلة!');
   document.getElementById('selectOptionModal').classList.remove('active');
 }
 
-// تحديث السلة
 function updateCart() {
   let h = ''; let t = 0;
   cart.forEach(i => { 
@@ -289,16 +336,61 @@ function processPayment() {
 }
 function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
 
-// --- حركة الـ 5 ضغطات ---
-let clicks = 0;
-document.getElementById('secretLogo').onclick = () => {
-  clicks++;
-  if(clicks === 5) { 
-    document.getElementById('loginModal').classList.add('active'); 
-    clicks = 0; 
+// --- الشعار: ضغطة للدعم، ضغط مطول 15 ثانية للإدارة ---
+const logo = document.getElementById('secretLogo');
+const supportModal = document.getElementById('supportModal');
+const loginModal = document.getElementById('loginModal');
+const counterDisplay = document.getElementById('secretCounter');
+
+let pressTimer;
+let longPressDuration = 15000; // 15 ثانية
+let startTime;
+let countdownInterval;
+let isLongPress = false;
+
+// بداية الضغط
+logo.addEventListener('mousedown', startPress);
+logo.addEventListener('touchstart', startPress, {passive: true});
+
+function startPress(e) {
+  isLongPress = false;
+  startTime = Date.now();
+  counterDisplay.style.display = 'block';
+  counterDisplay.innerText = '15';
+  
+  // عداد تنازلي
+  countdownInterval = setInterval(() => {
+    let elapsed = Date.now() - startTime;
+    let remaining = Math.ceil((longPressDuration - elapsed) / 1000);
+    if (remaining >= 0) {
+      counterDisplay.innerText = remaining;
+    }
+  }, 100);
+
+  // مؤقت 15 ثانية
+  pressTimer = setTimeout(() => {
+    isLongPress = true;
+    clearInterval(countdownInterval);
+    counterDisplay.style.display = 'none';
+    loginModal.classList.add('active'); // فتح الإدارة
+  }, longPressDuration);
+}
+
+// نهاية الضغط
+logo.addEventListener('mouseup', endPress);
+logo.addEventListener('mouseleave', endPress);
+logo.addEventListener('touchend', endPress);
+
+function endPress(e) {
+  clearTimeout(pressTimer);
+  clearInterval(countdownInterval);
+  counterDisplay.style.display = 'none';
+  
+  if (!isLongPress) {
+    // إذا كانت ضغطة سريعة (أقل من 15 ثانية)، افتح الدعم
+    supportModal.classList.add('active');
   }
-  setTimeout(() => { clicks = 0; }, 2000);
-};
+}
 
 // --- تسجيل الدخول ---
 function checkLogin() {
@@ -322,7 +414,7 @@ function renderAdmin() {
   let h = '';
   products.forEach(p => {
     let opts = p.options.map(o => `<small>${o.optName}: ${o.price}ر.س</small>`).join(' | ');
-    h += `<div class="admin-list-item"><div><strong>${p.name}</strong><br>${opts}</div><button onclick="del(${p.id})" style="color:#e74c3c; background:none; border:none; cursor:pointer; font-size:16px;"><i class="fa-solid fa-trash"></i></button></div>`
+    h += `<div class="admin-list-item"><div><strong>${p.name}</strong><br>${opts}</div><button onclick="del(${p.id})" style="color:var(--danger); background:none; border:none; cursor:pointer; font-size:16px;"><i class="fa-solid fa-trash"></i></button></div>`
   });
   document.getElementById('adminList').innerHTML = h || '<p style="color:var(--text-muted);">لا توجد منتجات</p>';
 }
@@ -331,19 +423,27 @@ function addProductAdmin() {
   const n = document.getElementById('newName').value;
   const img = document.getElementById('newImg').value || 'https://cdn-icons-png.flaticon.com/512/748/748137.png';
   
-  const opt1Name = document.getElementById('optName1').value;
-  const opt1Price = parseFloat(document.getElementById('optPrice1').value);
-  const opt2Name = document.getElementById('optName2').value;
-  const opt2Price = parseFloat(document.getElementById('optPrice2').value);
+  const optName1 = document.getElementById('optName1').value;
+  const optPrice1 = parseFloat(document.getElementById('optPrice1').value);
   
-  if(!n || !opt1Name || !opt1Price) {
+  if(!n || !optName1 || !optPrice1) {
     return alert('يجب إدخال اسم المنتج، وخيار واحد على الأقل مع سعره.');
   }
   
-  let optionsArray = [{ optName: opt1Name, price: opt1Price }];
-  if(opt2Name && opt2Price) {
-    optionsArray.push({ optName: opt2Name, price: opt2Price });
-  }
+  let optionsArray = [{ optName: optName1, price: optPrice1 }];
+  
+  // التحقق من الخيارات الإضافية
+  const optName2 = document.getElementById('optName2').value;
+  const optPrice2 = parseFloat(document.getElementById('optPrice2').value);
+  if(optName2 && optPrice2) optionsArray.push({ optName: optName2, price: optPrice2 });
+  
+  const optName3 = document.getElementById('optName3').value;
+  const optPrice3 = parseFloat(document.getElementById('optPrice3').value);
+  if(optName3 && optPrice3) optionsArray.push({ optName: optName3, price: optPrice3 });
+  
+  const optName4 = document.getElementById('optName4').value;
+  const optPrice4 = parseFloat(document.getElementById('optPrice4').value);
+  if(optName4 && optPrice4) optionsArray.push({ optName: optName4, price: optPrice4 });
   
   products.push({
     id: Date.now(),
@@ -352,7 +452,7 @@ function addProductAdmin() {
     options: optionsArray
   });
   
-  localStorage.setItem('cardStoreDataV2', JSON.stringify(products));
+  localStorage.setItem('cardStoreDataV3', JSON.stringify(products));
   renderStore(); renderAdmin();
   
   // تفريغ الحقول
@@ -362,13 +462,17 @@ function addProductAdmin() {
   document.getElementById('optPrice1').value = '';
   document.getElementById('optName2').value = '';
   document.getElementById('optPrice2').value = '';
+  document.getElementById('optName3').value = '';
+  document.getElementById('optPrice3').value = '';
+  document.getElementById('optName4').value = '';
+  document.getElementById('optPrice4').value = '';
   showToast('تم إضافة المنتج بنجاح!');
 }
 
 function del(id) {
   if(!confirm('هل تريد حذف هذا المنتج؟')) return;
   products = products.filter(i => i.id !== id);
-  localStorage.setItem('cardStoreDataV2', JSON.stringify(products));
+  localStorage.setItem('cardStoreDataV3', JSON.stringify(products));
   renderStore(); renderAdmin();
   showToast('تم الحذف!');
 }
@@ -376,12 +480,11 @@ function del(id) {
 function resetStore() {
   if(!confirm('تحذير: سيتم مسح كل المنتجات المضافة والعودة للافتراضي. هل أنت متأكد؟')) return;
   products = [...defaultData];
-  localStorage.setItem('cardStoreDataV2', JSON.stringify(products));
+  localStorage.setItem('cardStoreDataV3', JSON.stringify(products));
   renderStore(); renderAdmin();
   showToast('تم تصفير المتجر!');
 }
 
-// التشغيل
 renderStore(); updateCart();
 </script>
 </body>
