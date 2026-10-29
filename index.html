@@ -69,7 +69,7 @@
     opacity: 0; 
     transform: translateY(10px);
     transition: 0.3s; 
-    pointer-events: none; /* عشان ما ينضغط بالغلط الا اذا ظهر */
+    pointer-events: none;
   }
   .card:hover .details-btn { opacity: 1; transform: translateY(0); pointer-events: auto;}
   
@@ -162,7 +162,7 @@
     .search-box { order: 3; width: 100%; max-width: 100%; margin-top: 5px; }
     .hero h1 { font-size: 28px; }
     .fav-btn { opacity: 1; } 
-    .details-btn { opacity: 1; transform: translateY(0); pointer-events: auto;} /* في الجوال يظهر دايماً */
+    .details-btn { opacity: 1; transform: translateY(0); pointer-events: auto;} 
   }
 </style>
 </head>
@@ -362,16 +362,16 @@
 <script>
 // --- 1. البيانات الأساسية (Database) ---
 const defaultData = [
-  { id: 1, name: "شحن شدات ببجي", desc: "احصل على شدات ببجي فوراً وبأفضل سعر. يتم التسليم خلال ثواني عبر الكود المباشر.", img: "https://cdn-icons-png.flaticon.com/512/5988/5988417.png", options: [{ optName: "60 شدة", price: 4 }, { optName: "325 شدة", price: 19 }, { optName: "660 شدة", price: 38 }, { optName: "1800 شدة", price: 95 }] },
-  { id: 2, name: "شحن جواهر فري فاير", desc: "شحن جواهر فري فاير بشكل آمن وسريع. يدعم جميع السيرفرات.", img: "https://cdn-icons-png.flaticon.com/512/7950/7950374.png", options: [{ optName: "100 جوهرة", price: 5 }, { optName: "520 جوهرة", price: 35 }, { optName: "1080 جوهرة", price: 65 }] },
-  { id: 3, name: "شحن روبلوكس (Robux)", desc: "شحن شدات روبلوكس لحسابك مباشرة. تسليم فوري وآمن 100%.", img: "https://cdn-icons-png.flaticon.com/512/9143/9143950.png", options: [{ optName: "400 روبوكس", price: 20 }, { optName: "800 روبوكس", price: 40 }, { optName: "1700 روبوكس", price: 80 }] },
-  { id: 4, name: "شحن ماين كرافت (Minecoin)", desc: "شحن عملات ماين كرافت لشراء السكنات والإضافات.", img: "https://cdn-icons-png.flaticon.com/512/8151/8151615.png", options: [{ optName: "1720 عملة", price: 40 }, { optName: "3500 عملة", price: 75 }] },
+  { id: 1, name: "شحن شدات ببجي", desc: "احصل على شدات ببجي فوراً وبأفضل سعر. يتم التسليم خلال ثواني عبر الكود المباشر.", img: "https://cdnlogo.com/logos/p/59/pubg-mobile.png", options: [{ optName: "60 شدة", price: 4 }, { optName: "325 شدة", price: 19 }, { optName: "660 شدة", price: 38 }, { optName: "1800 شدة", price: 95 }] },
+  { id: 2, name: "شحن جواهر فري فاير", desc: "شحن جواهر فري فاير بشكل آمن وسريع. يدعم جميع السيرفرات.", img: "https://logodix.com/logo/2205219.png", options: [{ optName: "100 جوهرة", price: 5 }, { optName: "520 جوهرة", price: 35 }, { optName: "1080 جوهرة", price: 65 }] },
+  { id: 3, name: "شحن روبلوكس (Robux)", desc: "شحن شدات روبلوكس لحسابك مباشرة. تسليم فوري وآمن 100%.", img: "https://superdevpro.com/brands/roblox.svg", options: [{ optName: "400 روبوكس", price: 20 }, { optName: "800 روبوكس", price: 40 }, { optName: "1700 روبوكس", price: 80 }] },
+  { id: 4, name: "شحن ماين كرافت (Minecoin)", desc: "شحن عملات ماين كرافت لشراء السكنات والإضافات.", img: "https://toppng.com/uploads/preview/minecraft-logo-icon-minecraft-material-design-icon-png-11553329307xvkqjomfkv.png", options: [{ optName: "1720 عملة", price: 40 }, { optName: "3500 عملة", price: 75 }] },
   { id: 5, name: "بطاقة جوجل بلاي", desc: "بطاقة جوجل بلاي أمريكية أصلية. صالحة لشراء التطبيقات، الألعاب، والاشتراكات.", img: "https://cdn-icons-png.flaticon.com/512/888/888846.png", options: [{ optName: "فئة 10$", price: 40 }, { optName: "فئة 25$", price: 95 }, { optName: "فئة 50$", price: 185 }] },
   { id: 6, name: "بطاقة آيتونز (iTunes)", desc: "بطاقة آيتونز أمريكية لشراء تطبيقات الآيفون والاشتراكات.", img: "https://cdn-icons-png.flaticon.com/512/179/179309.png", options: [{ optName: "فئة 10$", price: 42 }, { optName: "فئة 25$", price: 100 }, { optName: "فئة 50$", price: 195 }] },
-  { id: 7, name: "بطاقة ستيم (Steam)", desc: "شحن محفظة ستيم لشراء الألعاب. كود أمريكي.", img: "https://cdn-icons-png.flaticon.com/512/5968/5968360.png", options: [{ optName: "فئة 20$", price: 85 }, { optName: "فئة 50$", price: 200 }] },
-  { id: 8, name: "بطاقة بلايستيشن (PSN)", desc: "بطاقة شبكة بلايستيشن لشراء الألعاب أو الاشتراكات.", img: "https://cdn-icons-png.flaticon.com/512/5968/5968306.png", options: [{ optName: "فئة 10$", price: 45 }, { optName: "فئة 25$", price: 105 }, { optName: "فئة 50$", price: 200 }] },
-  { id: 9, name: "اشتراك نتفليكس (Netflix)", desc: "اشتراك نتفليكس شهر كامل (شاشة واحدة). حساب خاص ومضمون.", img: "https://cdn-icons-png.flaticon.com/512/732/732228.png", options: [{ optName: "شهر واحد", price: 35 }, { optName: "3 أشهر", price: 90 }] },
-  { id: 10, name: "اشتراك سبوتيفاي (Spotify)", desc: "اشتراك سبوتيفاي بريميوم للاستماع بدون إعلانات وتحكم كامل.", img: "https://cdn-icons-png.flaticon.com/512/174/174872.png", options: [{ optName: "شهر واحد", price: 25 }, { optName: "6 أشهر", price: 120 }] },
+  { id: 7, name: "بطاقة ستيم (Steam)", desc: "شحن محفظة ستيم لشراء الألعاب. كود أمريكي.", img: "https://www.streamlinehq.com/icons/download/steam-logo-light--28927", options: [{ optName: "فئة 20$", price: 85 }, { optName: "فئة 50$", price: 200 }] },
+  { id: 8, name: "بطاقة بلايستيشن (PSN)", desc: "بطاقة شبكة بلايستيشن لشراء الألعاب أو الاشتراكات.", img: "https://superdevpro.com/brands/playstation.svg", options: [{ optName: "فئة 10$", price: 45 }, { optName: "فئة 25$", price: 105 }, { optName: "فئة 50$", price: 200 }] },
+  { id: 9, name: "اشتراك نتفليكس (Netflix)", desc: "اشتراك نتفليكس شهر كامل (شاشة واحدة). حساب خاص ومضمون.", img: "https://www.streamlinehq.com/icons/download/netflix-logo--28613", options: [{ optName: "شهر واحد", price: 35 }, { optName: "3 أشهر", price: 90 }] },
+  { id: 10, name: "اشتراك سبوتيفاي (Spotify)", desc: "اشتراك سبوتيفاي بريميوم للاستماع بدون إعلانات وتحكم كامل.", img: "https://www.streamlinehq.com/icons/download/spotify--31103", options: [{ optName: "شهر واحد", price: 25 }, { optName: "6 أشهر", price: 120 }] },
   { id: 11, name: "اشتراك شاهد VIP", desc: "اشتراك شاهد VIP لمشاهدة المسلسلات والأفلام الحصرية.", img: "https://cdn-icons-png.flaticon.com/512/10691/10691837.png", options: [{ optName: "شهر واحد", price: 35 }, { optName: "3 أشهر", price: 90 }] },
   { id: 12, name: "اشتراك يوتيوب بريميوم", desc: "مشاهدة يوتيوب بدون إعلانات مع تشغيل في الخلفية.", img: "https://cdn-icons-png.flaticon.com/512/1384/1384060.png", options: [{ optName: "شهر واحد", price: 20 }, { optName: "3 أشهر", price: 50 }] },
   { id: 13, name: "ويندوز 11 برو", desc: "مفتاح تنشيط ويندوز 11 برو أصلي ومدى الحياة.", img: "https://cdn-icons-png.flaticon.com/512/888/888879.png", options: [{ optName: "مفتاح أصلي", price: 60 }] },
@@ -388,9 +388,9 @@ const defaultSettings = {
   email: "support@cardstore.com"
 };
 
-let products = JSON.parse(localStorage.getItem('cardStoreV8_Products')) || defaultData;
-let settings = JSON.parse(localStorage.getItem('cardStoreV8_Settings')) || defaultSettings;
-let favorites = JSON.parse(localStorage.getItem('cardStoreV8_Favs')) || [];
+let products = JSON.parse(localStorage.getItem('cardStoreV9_Products')) || defaultData;
+let settings = JSON.parse(localStorage.getItem('cardStoreV9_Settings')) || defaultSettings;
+let favorites = JSON.parse(localStorage.getItem('cardStoreV9_Favs')) || [];
 let cart = [];
 let activeProduct = null;
 let selectedOptionIndex = -1;
@@ -437,7 +437,6 @@ function renderStore() {
 
   products.forEach(p => {
     const isFav = favorites.includes(p.id);
-    // الكرت كامل قابل للضغط
     prodList.innerHTML += `
       <div class="card" data-name="${p.name}" onclick="openProductPage(${p.id})">
         <button class="fav-btn ${isFav ? 'active' : ''}" onclick="toggleFav(event, ${p.id})">
@@ -446,7 +445,6 @@ function renderStore() {
         <img src="${p.img}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/748/748137.png'">
         <div class="card-content">
           <h3>${p.name}</h3>
-          <!-- زر التفاصيل مخفي ويطلع بالماوس -->
           <button class="details-btn" onclick="event.stopPropagation(); openProductPage(${p.id})">عرض التفاصيل <i class="fa-solid fa-eye"></i></button>
         </div>
       </div>
@@ -464,7 +462,7 @@ function toggleFav(e, id) {
     favorites.push(id);
     showToast('تمت الإضافة للمفضلة ❤️');
   }
-  localStorage.setItem('cardStoreV8_Favs', JSON.stringify(favorites));
+  localStorage.setItem('cardStoreV9_Favs', JSON.stringify(favorites));
   renderStore();
 }
 
@@ -605,7 +603,7 @@ function saveSettings() {
   settings.whatsapp = document.getElementById('setWhatsApp').value;
   settings.email = document.getElementById('setEmail').value;
   
-  localStorage.setItem('cardStoreV8_Settings', JSON.stringify(settings));
+  localStorage.setItem('cardStoreV9_Settings', JSON.stringify(settings));
   applySettings();
   showToast('تم حفظ الإعدادات بنجاح!');
 }
@@ -638,7 +636,7 @@ function addProductAdmin() {
   
   products.push({ id: Date.now(), name: n, desc: desc, img: img, options: optionsArray });
   
-  localStorage.setItem('cardStoreV8_Products', JSON.stringify(products));
+  localStorage.setItem('cardStoreV9_Products', JSON.stringify(products));
   renderStore(); renderAdmin();
   
   document.getElementById('newName').value = ''; document.getElementById('newImg').value = ''; document.getElementById('newDesc').value = '';
@@ -652,7 +650,7 @@ function addProductAdmin() {
 function del(id) {
   if(!confirm('هل تريد حذف هذا المنتج؟')) return;
   products = products.filter(i => i.id !== id);
-  localStorage.setItem('cardStoreV8_Products', JSON.stringify(products));
+  localStorage.setItem('cardStoreV9_Products', JSON.stringify(products));
   renderStore(); renderAdmin();
   showToast('تم الحذف!');
 }
@@ -661,8 +659,8 @@ function resetStore() {
   if(!confirm('تحذير: سيتم مسح كل المنتجات والإعدادات. هل أنت متأكد؟')) return;
   products = [...defaultData];
   settings = {...defaultSettings};
-  localStorage.setItem('cardStoreV8_Products', JSON.stringify(products));
-  localStorage.setItem('cardStoreV8_Settings', JSON.stringify(settings));
+  localStorage.setItem('cardStoreV9_Products', JSON.stringify(products));
+  localStorage.setItem('cardStoreV9_Settings', JSON.stringify(settings));
   applySettings(); renderStore(); renderAdmin();
   showToast('تم تصفير المتجر!');
 }
