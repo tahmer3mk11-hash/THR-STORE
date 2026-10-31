@@ -429,7 +429,7 @@
   async function loadProductsFromFirebase() {
     try {
       const db = window.firebaseDB;
-      const { collection, getDocs } = window.firebaseFuncs;
+      const { collection, getDocs } = { collection: db.collection.bind(db), getDocs: (c) => c.get() };
       const querySnapshot = await getDocs(collection(db, "products"));
       
       products = [];
