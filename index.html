@@ -153,6 +153,7 @@
 </header>
 <section class="hero"><h1 id="heroTitle">SPEEDSTORE | خدمات احترافية</h1><p id="heroDesc">برمجة بوتات، تأسيس سيرفرات، وتصميم</p></section>
 <div id="store-container"></div>
+
 <div id="productPage">
   <div class="product-page-header">
     <button class="back-btn" onclick="closeProductPage()"><i class="fa-solid fa-arrow-right"></i></button>
@@ -257,18 +258,23 @@
         <input type="number" id="optPrice1" placeholder="السعر 1">
         <input type="text" id="optName2" placeholder="الخيار 2 (اختياري)">
         <input type="number" id="optPrice2" placeholder="السعر 2">
+        <input type="text" id="optName3" placeholder="الخيار 3 (اختياري)">
+        <input type="number" id="optPrice3" placeholder="السعر 3">
+        <input type="text" id="optName4" placeholder="الخيار 4 (اختياري)">
+        <input type="number" id="optPrice4" placeholder="السعر 4">
+        <input type="text" id="optName5" placeholder="الخيار 5 (اختياري)">
+        <input type="number" id="optPrice5" placeholder="السعر 5">
       </div>
       <button class="btn-close" onclick="addProductAdmin()">إضافة</button>
     </div>
   </div>
 </div>
 
-<footer><p id="footerText">© 2025 SPEEDSTORE</p></footer>
+<footer><p id="footerText">©️ 2025 SPEEDSTORE</p></footer>
 <div class="toast-container" id="toastContainer"></div>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-<script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script>
   const firebaseConfig = {
     apiKey: "AIzaSyD004hg5d92F7hMeCLJmczaF2AElGGPo1g",
     authDomain: "thr-store.firebaseapp.com",
@@ -341,13 +347,14 @@
     container.appendChild(toast);
     setTimeout(() => toast.classList.add('show'), 10);
   }
+
   function applySettings() {
     document.getElementById('siteTitle').innerText = settings.siteName;
     document.getElementById('headerSiteName').innerText = settings.siteName;
     document.getElementById('heroTitle').innerText = settings.heroTitle;
     document.getElementById('heroDesc').innerText = settings.heroDesc;
     document.getElementById('supportWaLink').href = `https://wa.me/${settings.whatsapp}`;
-    document.getElementById('footerText').innerText = `© ${new Date().getFullYear()} ${settings.siteName}`;
+    document.getElementById('footerText').innerText = `©️ ${new Date().getFullYear()} ${settings.siteName}`;
   }
 
   function updateAuthUI() {
@@ -557,6 +564,12 @@
     let optionsArray = [{ optName: optName1, price: optPrice1 }];
     const optName2 = document.getElementById('optName2').value; const optPrice2 = parseFloat(document.getElementById('optPrice2').value);
     if(optName2 && optPrice2) optionsArray.push({ optName: optName2, price: optPrice2 });
+    const optName3 = document.getElementById('optName3').value; const optPrice3 = parseFloat(document.getElementById('optPrice3').value);
+    if(optName3 && optPrice3) optionsArray.push({ optName: optName3, price: optPrice3 });
+    const optName4 = document.getElementById('optName4').value; const optPrice4 = parseFloat(document.getElementById('optPrice4').value);
+    if(optName4 && optPrice4) optionsArray.push({ optName: optName4, price: optPrice4 });
+    const optName5 = document.getElementById('optName5').value; const optPrice5 = parseFloat(document.getElementById('optPrice5').value);
+    if(optName5 && optPrice5) optionsArray.push({ optName: optName5, price: optPrice5 });
     
     const newProduct = { id: Date.now(), name: n, desc: desc, img: img, options: optionsArray };
     
@@ -564,7 +577,7 @@
       await db.collection("products").add(newProduct);
       showToast('تمت إضافة الخدمة بنجاح!');
       loadProductsFromFirebase();
-      document.getElementById('newName').value = ''; document.getElementById('newImg').value = ''; document.getElementById('newDesc').value = ''; document.getElementById('optName1').value = ''; document.getElementById('optPrice1').value = ''; document.getElementById('optName2').value = ''; document.getElementById('optPrice2').value = '';
+      document.getElementById('newName').value = ''; document.getElementById('newImg').value = ''; document.getElementById('newDesc').value = ''; document.getElementById('optName1').value = ''; document.getElementById('optPrice1').value = ''; document.getElementById('optName2').value = ''; document.getElementById('optPrice2').value = ''; document.getElementById('optName3').value = ''; document.getElementById('optPrice3').value = ''; document.getElementById('optName4').value = ''; document.getElementById('optPrice4').value = ''; document.getElementById('optName5').value = ''; document.getElementById('optPrice5').value = '';
     } catch(e) {
       console.error(e);
       showToast('خطأ في الإضافة', 'error');
@@ -596,3 +609,4 @@
 </script>
 </body>
 </html>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
