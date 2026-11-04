@@ -16,7 +16,6 @@
   .preloader-logo i { color: var(--primary); text-shadow: 0 0 20px var(--primary); }
   @keyframes pulseLogo { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
   .bg-glow { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; background: radial-gradient(circle at 15% 50%, var(--primary-glow), transparent 25%), radial-gradient(circle at 85% 30%, rgba(52, 152, 219, 0.4), transparent 25%); animation: pulseGlow 10s infinite alternate; }
-  .interactive-glow { position: fixed; width: 600px; height: 600px; background: radial-gradient(circle, var(--primary-glow) 0%, transparent 60%); border-radius: 50%; pointer-events: none; z-index: -1; transform: translate(-50%, -50%); opacity: 0; transition: opacity 0.3s; filter: blur(50px);}
   @keyframes pulseGlow { 0% { opacity: 0.5; transform: scale(1); } 100% { opacity: 0.8; transform: scale(1.1); } }
   header { background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(12px); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap; gap: 10px;}
   .header-right { display: flex; align-items: center; gap: 15px; flex-wrap: wrap;}
@@ -119,7 +118,6 @@
 <body>
 <div id="preloader"><div class="preloader-logo"><i class="fa-solid fa-bolt"></i> SPEEDSTORE</div></div>
 <div class="bg-glow"></div>
-<div class="interactive-glow" id="mouseGlow"></div>
 <header>
   <div class="header-right">
     <div class="logo" id="secretLogo"><i class="fa-solid fa-bolt"></i> <span id="headerSiteName">SPEEDSTORE</span></div>
@@ -237,6 +235,32 @@
     </div>
   </div>
 </div>
+
+<!-- نافذة تعديل المنتج (الجديدة) -->
+<div class="modal-overlay" id="editProductModal">
+  <div class="modal">
+    <div class="modal-header"><h3><i class="fa-solid fa-pen-to-square"></i> تعديل الخدمة</h3><button class="modal-close-btn" onclick="document.getElementById('editProductModal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button></div>
+    <input type="hidden" id="editId">
+    <input type="text" id="editName" placeholder="اسم الخدمة">
+    <input type="text" id="editImg" placeholder="رابط الصورة">
+    <textarea id="editDesc" placeholder="الوصف"></textarea>
+    <div class="admin-options-inputs">
+      <p style="font-size: 13px; color: var(--primary); margin-bottom: 10px; font-weight: bold;">الخيارات والأسعار:</p>
+      <input type="text" id="editOptName1" placeholder="الخيار 1">
+      <input type="number" id="editOptPrice1" placeholder="السعر 1">
+      <input type="text" id="editOptName2" placeholder="الخيار 2 (اختياري)">
+      <input type="number" id="editOptPrice2" placeholder="السعر 2">
+      <input type="text" id="editOptName3" placeholder="الخيار 3 (اختياري)">
+      <input type="number" id="editOptPrice3" placeholder="السعر 3">
+      <input type="text" id="editOptName4" placeholder="الخيار 4 (اختياري)">
+      <input type="number" id="editOptPrice4" placeholder="السعر 4">
+      <input type="text" id="editOptName5" placeholder="الخيار 5 (اختياري)">
+      <input type="number" id="editOptPrice5" placeholder="السعر 5">
+    </div>
+    <button class="btn-close" onclick="saveEditProduct()">حفظ التعديلات</button>
+  </div>
+</div>
+
 <footer><p id="footerText">©️ 2025 SPEEDSTORE</p></footer>
 <div class="toast-container" id="toastContainer"></div>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -281,21 +305,30 @@
   function checkAdminLogin() { const user = document.getElementById('adminUser').value; const pass = document.getElementById('adminPass').value; if(user === 'THAMER133' && pass === 'TtHh112233445566') { document.getElementById('loginAdminModal').classList.remove('active'); document.getElementById('adminModal').classList.add('active'); document.getElementById('setSiteName').value = settings.siteName; document.getElementById('setHeroTitle').value = settings.heroTitle; document.getElementById('setHeroDesc').value = settings.heroDesc; document.getElementById('setWhatsApp').value = settings.whatsapp; renderAdmin(); renderAdminReviews(); showToast('مرحباً بك!'); } else { showToast('خطأ في البيانات!', 'error'); } }
   function switchTab(tabId) { document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.remove('active')); document.querySelectorAll('.admin-tab-btn').forEach(el => el.classList.remove('active')); document.getElementById(tabId).classList.add('active'); event.target.classList.add('active'); }
   function saveSettings() { settings.siteName = document.getElementById('setSiteName').value; settings.heroTitle = document.getElementById('setHeroTitle').value; settings.heroDesc = document.getElementById('setHeroDesc').value; settings.whatsapp = document.getElementById('setWhatsApp').value; localStorage.setItem('cardStoreSettings', JSON.stringify(settings)); applySettings(); showToast('تم الحفظ!'); }
-  function renderAdmin() { let h = ''; products.forEach(p => { h += `<div class="admin-list-item"><div><strong>${p.name}</strong></div><div><button onclick="editProduct('${p.firebaseId}')" style="color:var(--primary); background:none; border:none; cursor:pointer; margin-left:10px;"><i class="fa-solid fa-edit"></i></button><button onclick="del('${p.firebaseId}')" style="color:var(--danger); background:none; border:none; cursor:pointer;"><i class="fa-solid fa-trash"></i></button></div></div>`; }); document.getElementById('adminList').innerHTML = h || '<p style="color:#fff;">لا توجد خدمات</p>'; }
+  function renderAdmin() { let h = ''; products.forEach(p => { h += `<div class="admin-list-item"><div><strong>${p.name}</strong></div><div><button onclick="openEditModal('${p.firebaseId}')" style="color:var(--primary); background:none; border:none; cursor:pointer; margin-left:10px;"><i class="fa-solid fa-edit"></i></button><button onclick="del('${p.firebaseId}')" style="color:var(--danger); background:none; border:none; cursor:pointer;"><i class="fa-solid fa-trash"></i></button></div></div>`; }); document.getElementById('adminList').innerHTML = h || '<p style="color:#fff;">لا توجد خدمات</p>'; }
   function renderAdminReviews() { const list = document.getElementById('adminReviewsList'); if(reviews.length === 0) { list.innerHTML = '<p style="color:#fff;">لا توجد تقييمات.</p>'; return; } list.innerHTML = reviews.map(r => `<div class="admin-list-item"><div><strong>${r.name}</strong><br><small>${r.text}</small></div><button onclick="delReview(${r.id})" style="color:var(--danger); background:none; border:none; cursor:pointer;"><i class="fa-solid fa-trash"></i></button></div>`).join(''); }
   function delReview(id) { showConfirm('حذف التقييم؟', () => { reviews = reviews.filter(r => r.id !== id); localStorage.setItem('cardStoreReviews', JSON.stringify(reviews)); renderAdminReviews(); if(activeProduct) loadReviews(activeProduct.id); showToast('تم الحذف'); }); }
-  async function editProduct(fbId) {
+  function openEditModal(fbId) {
     const p = products.find(prod => prod.firebaseId === fbId);
     if(!p) return;
-    const newName = prompt('اسم المنتج الجديد:', p.name);
-    if(!newName) return;
-    const newImg = prompt('رابط الصورة الجديد:', p.img);
-    const newDesc = prompt('الوصف الجديد:', p.desc);
-    try {
-      await db.collection("products").doc(fbId).update({ name: newName, img: newImg, desc: newDesc });
-      showToast('تم تعديل بيانات المنتج الأساسية!');
-      loadProductsFromFirebase();
-    } catch(e) { showToast('خطأ في التعديل', 'error'); }
+    document.getElementById('editId').value = fbId;
+    document.getElementById('editName').value = p.name;
+    document.getElementById('editImg').value = p.img;
+    document.getElementById('editDesc').value = p.desc || '';
+    for(let i=1; i<=5; i++) { document.getElementById('editOptName' + i).value = ''; document.getElementById('editOptPrice' + i).value = ''; }
+    if(p.options) { p.options.forEach((opt, index) => { if(index < 5) { document.getElementById('editOptName' + (index+1)).value = opt.optName; document.getElementById('editOptPrice' + (index+1)).value = opt.price; } }); }
+    document.getElementById('editProductModal').classList.add('active');
+    document.getElementById('adminModal').classList.remove('active');
+  }
+  async function saveEditProduct() {
+    const fbId = document.getElementById('editId').value;
+    const n = document.getElementById('editName').value;
+    const img = document.getElementById('editImg').value;
+    const desc = document.getElementById('editDesc').value;
+    let optionsArray = [];
+    for(let i=1; i<=5; i++) { const optName = document.getElementById('editOptName' + i).value; const optPrice = parseFloat(document.getElementById('editOptPrice' + i).value); if(optName && optPrice) { optionsArray.push({ optName: optName, price: optPrice }); } }
+    if(!n || optionsArray.length === 0) return showToast('أدخل الاسم وخيار واحد على الأقل', 'error');
+    try { await db.collection("products").doc(fbId).update({ name: n, img: img, desc: desc, options: optionsArray }); showToast('تم تعديل الخدمة بنجاح!'); document.getElementById('editProductModal').classList.remove('active'); loadProductsFromFirebase(); } catch(e) { showToast('خطأ في التعديل', 'error'); }
   }
   async function addProductAdmin() { const n = document.getElementById('newName').value; const img = document.getElementById('newImg').value || 'https://cdn-icons-png.flaticon.com/512/748/748137.png'; const desc = document.getElementById('newDesc').value; const optName1 = document.getElementById('optName1').value; const optPrice1 = parseFloat(document.getElementById('optPrice1').value); if(!n || !optName1 || !optPrice1) return showToast('أدخل الاسم والخيار الأول', 'error'); let optionsArray = [{ optName: optName1, price: optPrice1 }]; const optName2 = document.getElementById('optName2').value; const optPrice2 = parseFloat(document.getElementById('optPrice2').value); if(optName2 && optPrice2) optionsArray.push({ optName: optName2, price: optPrice2 }); const optName3 = document.getElementById('optName3').value; const optPrice3 = parseFloat(document.getElementById('optPrice3').value); if(optName3 && optPrice3) optionsArray.push({ optName: optName3, price: optPrice3 }); const optName4 = document.getElementById('optName4').value; const optPrice4 = parseFloat(document.getElementById('optPrice4').value); if(optName4 && optPrice4) optionsArray.push({ optName: optName4, price: optPrice4 }); const optName5 = document.getElementById('optName5').value; const optPrice5 = parseFloat(document.getElementById('optPrice5').value); if(optName5 && optPrice5) optionsArray.push({ optName: optName5, price: optPrice5 }); const newProduct = { id: Date.now(), name: n, desc: desc, img: img, options: optionsArray }; try { await db.collection("products").add(newProduct); showToast('تمت إضافة الخدمة بنجاح!'); loadProductsFromFirebase(); document.getElementById('newName').value = ''; document.getElementById('newImg').value = ''; document.getElementById('newDesc').value = ''; document.getElementById('optName1').value = ''; document.getElementById('optPrice1').value = ''; document.getElementById('optName2').value = ''; document.getElementById('optPrice2').value = ''; document.getElementById('optName3').value = ''; document.getElementById('optPrice3').value = ''; document.getElementById('optName4').value = ''; document.getElementById('optPrice4').value = ''; document.getElementById('optName5').value = ''; document.getElementById('optPrice5').value = ''; } catch(e) { console.error(e); showToast('خطأ في الإضافة', 'error'); } }
   async function del(fbId) { showConfirm('حذف هذه الخدمة؟', async () => { try { await db.collection("products").doc(fbId).delete(); showToast('تم الحذف!'); loadProductsFromFirebase(); } catch(e) { showToast('خطأ في الحذف', 'error'); } }); }
