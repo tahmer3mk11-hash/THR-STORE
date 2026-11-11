@@ -172,7 +172,7 @@
   <div class="modal">
     <div class="modal-header"><h3><i class="fa-solid fa-headset"></i> الدعم</h3><button class="modal-close-btn" onclick="document.getElementById('supportModal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button></div>
     <p style="margin-bottom: 20px; color: var(--text-muted);">كيف يمكننا مساعدتك؟</p>
-    <a id="supportWaLink" href="#" target="_blank" style="display:block; background: var(--whatsapp); color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: bold;"><i class="fa-brands fa-whatsapp"></i> تواصل عبر واتساب</a>
+    <a id="supportWaLink" href="https://wa.me/966533808064" target="_blank" style="display:block; background: var(--whatsapp); color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: bold;"><i class="fa-brands fa-whatsapp"></i> تواصل عبر واتساب</a>
   </div>
 </div>
 <div class="modal-overlay" id="loginModal">
@@ -235,8 +235,6 @@
     </div>
   </div>
 </div>
-
-<!-- نافذة تعديل المنتج (الجديدة) -->
 <div class="modal-overlay" id="editProductModal">
   <div class="modal">
     <div class="modal-header"><h3><i class="fa-solid fa-pen-to-square"></i> تعديل الخدمة</h3><button class="modal-close-btn" onclick="document.getElementById('editProductModal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button></div>
@@ -260,7 +258,6 @@
     <button class="btn-close" onclick="saveEditProduct()">حفظ التعديلات</button>
   </div>
 </div>
-
 <footer><p id="footerText">©️ 2025 SPEEDSTORE</p></footer>
 <div class="toast-container" id="toastContainer"></div>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -276,8 +273,6 @@
   };
   firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
   window.addEventListener('load', () => { setTimeout(() => document.getElementById('preloader').classList.add('hidden'), 1000); });
-  const mouseGlow = document.getElementById('mouseGlow'); document.addEventListener('mousemove', (e) => { mouseGlow.style.opacity = '1'; mouseGlow.style.left = e.clientX + 'px'; mouseGlow.style.top = e.clientY + 'px'; }); document.addEventListener('mouseleave', () => { mouseGlow.style.opacity = '0'; });
-  document.addEventListener('mousemove', (e) => { const cards = document.querySelectorAll('.card'); cards.forEach(card => { const rect = card.getBoundingClientRect(); const x = e.clientX - rect.left; const y = e.clientY - rect.top; if(x > 0 && x < rect.width && y > 0 && y < rect.height) { const centerX = rect.width / 2; const centerY = rect.height / 2; const rotateX = ((y - centerY) / centerY) * -10; const rotateY = ((x - centerX) / centerX) * 10; card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`; } else { card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)`; } }); });
   const defaultSettings = { siteName: "SPEEDSTORE", heroTitle: "المتجر الشامل", heroDesc: "خدمات احترافية", whatsapp: "966533808064" };
   let products = []; let favorites = JSON.parse(localStorage.getItem('cardStoreFavs')) || []; let cart = JSON.parse(localStorage.getItem('cardStoreCart')) || []; let currentUser = JSON.parse(localStorage.getItem('cardStoreUser')) || null; let reviews = JSON.parse(localStorage.getItem('cardStoreReviews')) || []; let settings = JSON.parse(localStorage.getItem('cardStoreSettings')) || defaultSettings; let activeProduct = null; let selectedOptionIndex = -1; let currentRating = 0;
   function showToast(message, type = 'success') { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); toast.className = `toast ${type}`; let icon = type === 'error' ? 'fa-circle-xmark' : (type === 'warning' ? 'fa-triangle-exclamation' : 'fa-check-circle'); toast.innerHTML = `<i class="fa-solid ${icon} toast-icon"></i> <span>${message}</span>`; container.appendChild(toast); setTimeout(() => toast.classList.add('show'), 10); setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000); }
