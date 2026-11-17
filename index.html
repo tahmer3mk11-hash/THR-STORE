@@ -165,6 +165,13 @@
 <div class="cart-panel" id="cartPanel">
   <h2>سلة المشتريات <span class="close-cart" onclick="toggleCart()"><i class="fa-solid fa-xmark"></i></span></h2>
   <div class="cart-items-container" id="cartItems"></div>
+  
+  <!-- كوبون الخصم -->
+  <div style="margin-top: 15px; display: flex; gap: 10px;">
+    <input type="text" id="couponCodeInput" placeholder="كود الخصم" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #2a2a2a; color: #fff;">
+    <button onclick="applyCoupon()" style="padding: 10px 15px; border-radius: 8px; background: var(--primary); color: #fff; border: none; cursor: pointer; font-weight: bold;">تطبيق</button>
+  </div>
+
   <div class="cart-total"><span>الإجمالي:</span><span id="total">0 ر.س</span></div>
   <button class="whatsapp-checkout" onclick="sendOrderToWhatsApp()"><i class="fa-brands fa-whatsapp"></i> إتمام الطلب عبر واتساب</button>
 </div>
@@ -196,6 +203,7 @@
     <div class="modal-header"><h3><i class="fa-solid fa-user-gear"></i> لوحة التحكم</h3><button class="modal-close-btn" onclick="document.getElementById('adminModal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button></div>
     <div class="admin-tabs">
       <button class="admin-tab-btn active" onclick="switchTab('tab-settings')">الإعدادات</button>
+      <button class="admin-tab-btn" onclick="switchTab('tab-coupons')">الكوبونات</button>
       <button class="admin-tab-btn" onclick="switchTab('tab-reviews')">التقييمات</button>
       <button class="admin-tab-btn" onclick="switchTab('tab-products')">الخدمات</button>
       <button class="admin-tab-btn" onclick="switchTab('tab-add')">إضافة خدمة</button>
@@ -207,6 +215,19 @@
       <input type="text" id="setWhatsApp" placeholder="رقم الواتساب 966...">
       <button class="btn-close" onclick="saveSettings()">حفظ</button>
     </div>
+    
+    <!-- تبويب الكوبونات الجديد -->
+    <div class="admin-tab-content" id="tab-coupons">
+      <h4 style="color:#fff; margin-bottom:15px;">إضافة كوبون جديد:</h4>
+      <div style="display:flex; gap:10px; margin-bottom:20px;">
+        <input type="text" id="newCouponCode" placeholder="اسم الكوبون (مثلاً: THAMER10)" style="margin:0; flex:1;">
+        <input type="number" id="newCouponDiscount" placeholder="الخصم (%)" style="margin:0; width:120px;">
+        <button class="btn-close" onclick="addCoupon()" style="width:auto; padding:0 20px;">إضافة</button>
+      </div>
+      <h4 style="color:#fff; margin-bottom:15px;">الكوبونات الحالية:</h4>
+      <div id="adminCouponsList" style="max-height: 200px; overflow-y: auto;"></div>
+    </div>
+
     <div class="admin-tab-content" id="tab-reviews">
       <h4 style="color:#fff; margin-bottom:15px;">تقييمات العملاء:</h4>
       <div id="adminReviewsList" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;"></div>
@@ -274,14 +295,19 @@
   firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
   window.addEventListener('load', () => { setTimeout(() => document.getElementById('preloader').classList.add('hidden'), 1000); });
   const defaultSettings = { siteName: "SPEEDSTORE", heroTitle: "المتجر الشامل", heroDesc: "خدمات احترافية", whatsapp: "966533808064" };
-  let products = []; let favorites = JSON.parse(localStorage.getItem('cardStoreFavs')) || []; let cart = JSON.parse(localStorage.getItem('cardStoreCart')) || []; let currentUser = JSON.parse(localStorage.getItem('cardStoreUser')) || null; let reviews = JSON.parse(localStorage.getItem('cardStoreReviews')) || []; let settings = JSON.parse(localStorage.getItem('cardStoreSettings')) || defaultSettings; let activeProduct = null; let selectedOptionIndex = -1; let currentRating = 0;
+  let products = []; let favorites = JSON.parse(localStorage.getItem('cardStoreFavs')) || []; let cart = JSON.parse(localStorage.getItem('cardStoreCart')) || []; let currentUser = JSON.parse(localStorage.getItem('cardStoreUser')) || null; let reviews = JSON.parse(localStorage.getItem('cardStoreReviews')) || []; let settings = JSON.parse(localStorage.getItem('cardStoreSettings')) || defaultSettings; let activeProduct = null; let selectedOptionIndex = -1; let currentRating = 0; let coupons = []; let appliedCoupon = null;
+  
   function showToast(message, type = 'success') { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); toast.className = `toast ${type}`; let icon = type === 'error' ? 'fa-circle-xmark' : (type === 'warning' ? 'fa-triangle-exclamation' : 'fa-check-circle'); toast.innerHTML = `<i class="fa-solid ${icon} toast-icon"></i> <span>${message}</span>`; container.appendChild(toast); setTimeout(() => toast.classList.add('show'), 10); setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000); }
   function showConfirm(message, onConfirm) { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); toast.className = `toast warning`; toast.style.flexDirection = 'column'; toast.style.alignItems = 'flex-start'; toast.innerHTML = `<div><i class="fa-solid fa-triangle-exclamation toast-icon"></i> ${message}</div><div style="display:flex; gap:10px; margin-top:10px;"><button onclick="this.parentElement.parentElement.remove(); (${onConfirm.toString()})()" style="flex:1; padding:8px; background:var(--danger); color:#fff; border:none; border-radius:6px;">نعم</button><button onclick="this.parentElement.parentElement.remove()" style="flex:1; padding:8px; background:#444; color:#fff; border:none; border-radius:6px;">إلغاء</button></div>`; container.appendChild(toast); setTimeout(() => toast.classList.add('show'), 10); }
   function applySettings() { document.getElementById('siteTitle').innerText = settings.siteName; document.getElementById('headerSiteName').innerText = settings.siteName; document.getElementById('heroTitle').innerText = settings.heroTitle; document.getElementById('heroDesc').innerText = settings.heroDesc; document.getElementById('supportWaLink').href = `https://wa.me/${settings.whatsapp}`; document.getElementById('footerText').innerText = `©️ ${new Date().getFullYear()} ${settings.siteName}`; }
   function updateAuthUI() { const authBtn = document.getElementById('authText'); if(currentUser) { authBtn.innerText = currentUser.email.split('@')[0]; document.getElementById('authButton').style.borderColor = 'var(--success)'; } else { authBtn.innerText = "تسجيل الدخول"; document.getElementById('authButton').style.borderColor = 'rgba(255,255,255,0.1)'; } }
   function handleAuthClick() { if(currentUser) { showConfirm('هل تريد تسجيل الخروج؟', () => { currentUser = null; localStorage.removeItem('cardStoreUser'); updateAuthUI(); showToast('تم تسجيل الخروج', 'success'); }); } else { document.getElementById('loginModal').classList.add('active'); } }
   function loginUser() { const email = document.getElementById('userEmail').value; const pass = document.getElementById('userPass').value; if(!email || !pass || !email.includes('@')) return showToast('أدخل بريد صحيح وكلمة مرور', 'error'); currentUser = { email: email, pass: pass }; localStorage.setItem('cardStoreUser', JSON.stringify(currentUser)); document.getElementById('loginModal').classList.remove('active'); updateAuthUI(); showToast('تم تسجيل الدخول!', 'success'); document.getElementById('userEmail').value = ''; document.getElementById('userPass').value = ''; }
+  
   async function loadProductsFromFirebase() { try { const querySnapshot = await db.collection("products").get(); products = []; querySnapshot.forEach((doc) => { products.push({ firebaseId: doc.id, ...doc.data() }); }); renderStore(); } catch (e) { console.error("Firebase Error:", e); showToast('حدث خطأ في الاتصال بقاعدة البيانات', 'error'); } }
+  
+  async function loadCouponsFromFirebase() { try { const querySnapshot = await db.collection("coupons").get(); coupons = []; querySnapshot.forEach((doc) => { coupons.push({ firebaseId: doc.id, ...doc.data() }); }); renderAdminCoupons(); } catch (e) { console.error("Coupons Error:", e); } }
+
   function renderStore() { const c = document.getElementById('store-container'); c.innerHTML = '<div style="text-align:center;"><h2 class="section-title">🛒 الخدمات المتوفرة</h2></div><section class="products" id="prodList"></section>'; const prodList = document.getElementById('prodList'); if(products.length === 0) { prodList.innerHTML = '<p style="text-align:center; color:#fff;">لا توجد خدمات.</p>'; return; } products.forEach(p => { const isFav = favorites.includes(p.id); prodList.innerHTML += `<div class="card" data-name="${p.name}" onclick="openProductPage('${p.firebaseId}')"><button class="fav-btn ${isFav ? 'active' : ''}" onclick="toggleFav(event, ${p.id})"><i class="fa-solid fa-heart"></i></button><img src="${p.img}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/748/748137.png'"><div class="card-content"><h3>${p.name}</h3><button class="details-btn">التفاصيل <i class="fa-solid fa-eye"></i></button></div></div>`; }); }
   function toggleFav(e, id) { e.stopPropagation(); const index = favorites.indexOf(id); if(index > -1) { favorites.splice(index, 1); showToast('تمت الإزالة'); } else { favorites.push(id); showToast('تمت الإضافة ❤️'); } localStorage.setItem('cardStoreFavs', JSON.stringify(favorites)); renderStore(); }
   function filterProducts() { const query = document.getElementById('searchInput').value.toLowerCase(); document.querySelectorAll('.card').forEach(card => { card.style.display = card.getAttribute('data-name').toLowerCase().includes(query) ? 'flex' : 'none'; }); }
@@ -292,43 +318,77 @@
   function setRating(val) { currentRating = val; document.querySelectorAll('#starRating i').forEach((star, index) => { if(index < val) star.classList.add('active'); else star.classList.remove('active'); }); }
   function submitReview() { if(!activeProduct) return; const name = document.getElementById('reviewName').value.trim() || 'عميل'; const text = document.getElementById('reviewText').value.trim(); if(currentRating === 0) return showToast('اختر النجوم', 'warning'); if(!text) return showToast('اكتب تعليق', 'warning'); reviews.push({ id: Date.now(), productId: activeProduct.id, name: name, rating: currentRating, text: text, date: new Date().toLocaleDateString('ar-SA') }); localStorage.setItem('cardStoreReviews', JSON.stringify(reviews)); document.getElementById('reviewName').value = ''; document.getElementById('reviewText').value = ''; setRating(0); loadReviews(activeProduct.id); showToast('تم إضافة التقييم!'); }
   function loadReviews(productId) { const list = document.getElementById('reviewsList'); const pReviews = reviews.filter(r => r.productId === productId); if(pReviews.length === 0) { list.innerHTML = '<p style="color:#fff; text-align:center;">لا توجد تقييمات.</p>'; return; } list.innerHTML = pReviews.map(r => { let stars = ''; for(let i=0; i<5; i++) { stars += i < r.rating ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>'; } return `<div class="review-card"><div class="review-header"><span class="review-name">${r.name}</span><div class="review-stars">${stars}</div></div><p class="review-text">${r.text}</p></div>`; }).join(''); }
-  function updateCart() { let h = ''; let t = 0; cart.forEach(i => { t += i.price * i.qty; h += `<div class="cart-item"><div><strong>${i.name}</strong><br><small>${i.price} ر.س × ${i.qty}</small></div><span class="remove" onclick="removeCart('${i.id}')"><i class="fa-solid fa-trash"></i></span></div>`; }); document.getElementById('cartItems').innerHTML = h || '<p style="text-align:center; color:#fff;">السلة فارغة</p>'; document.getElementById('total').innerText = t + ' ر.س'; document.getElementById('count').innerText = cart.reduce((s,i)=>s+i.qty,0); localStorage.setItem('cardStoreCart', JSON.stringify(cart)); }
+  
+  function updateCart() { 
+    let h = ''; let t = 0; 
+    cart.forEach(i => { t += i.price * i.qty; h += `<div class="cart-item"><div><strong>${i.name}</strong><br><small>${i.price} ر.س × ${i.qty}</small></div><span class="remove" onclick="removeCart('${i.id}')"><i class="fa-solid fa-trash"></i></span></div>`; }); 
+    document.getElementById('cartItems').innerHTML = h || '<p style="text-align:center; color:#fff;">السلة فارغة</p>'; 
+    
+    if(appliedCoupon) { t = t - (t * (appliedCoupon.discount / 100)); }
+    
+    document.getElementById('total').innerText = t + ' ر.س'; 
+    document.getElementById('count').innerText = cart.reduce((s,i)=>s+i.qty,0); 
+    localStorage.setItem('cardStoreCart', JSON.stringify(cart)); 
+  }
+  
+  function applyCoupon() {
+    const code = document.getElementById('couponCodeInput').value.trim().toUpperCase();
+    const found = coupons.find(c => c.code === code);
+    if (found) {
+      appliedCoupon = found;
+      updateCart();
+      showToast(`تم تطبيق خصم ${found.discount}%!`);
+    } else {
+      showToast('كود الخصم غير صحيح أو منتهي', 'error');
+    }
+  }
+
   function removeCart(id) { cart = cart.filter(i => i.id !== id); updateCart(); }
   function toggleCart() { document.getElementById('cartPanel').classList.toggle('open'); }
-  function sendOrderToWhatsApp() { if(cart.length === 0) return showToast('السلة فارغة!', 'warning'); if(!currentUser) { showToast('الرجاء تسجيل الدخول أولاً', 'warning'); document.getElementById('loginModal').classList.add('active'); return; } let msg = "مرحباً، أرغب بطلب:\n\n"; let total = 0; cart.forEach(i => { msg += `- ${i.name} (x${i.qty}) = ${i.price * i.qty} ر.س\n`; total += i.price * i.qty; }); msg += `\nالإجمالي: ${total} ر.س\n`; msg += `\nالإيميل: ${currentUser.email}`; window.open(`https://wa.me/${settings.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank'); }
+  function sendOrderToWhatsApp() { if(cart.length === 0) return showToast('السلة فارغة!', 'warning'); if(!currentUser) { showToast('الرجاء تسجيل الدخول أولاً', 'warning'); document.getElementById('loginModal').classList.add('active'); return; } let msg = "مرحباً، أرغب بطلب:\n\n"; let total = 0; cart.forEach(i => { msg += `- ${i.name} (x${i.qty}) = ${i.price * i.qty} ر.س\n`; total += i.price * i.qty; }); if(appliedCoupon) { const discountValue = total * (appliedCoupon.discount / 100); total -= discountValue; msg += `\nكود الخصم: ${appliedCoupon.code} (-${appliedCoupon.discount}%)\n`; } msg += `\nالإجمالي: ${total} ر.س\n`; msg += `\nالإيميل: ${currentUser.email}`; window.open(`https://wa.me/${settings.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank'); }
+  
   const logo = document.getElementById('secretLogo'); let pressTimer; logo.addEventListener('mousedown', () => { pressTimer = setTimeout(() => { document.getElementById('loginAdminModal').classList.add('active'); }, 15000); }); logo.addEventListener('touchstart', () => { pressTimer = setTimeout(() => { document.getElementById('loginAdminModal').classList.add('active'); }, 15000); }, {passive: true}); logo.addEventListener('mouseup', () => clearTimeout(pressTimer)); logo.addEventListener('mouseleave', () => clearTimeout(pressTimer)); logo.addEventListener('touchend', () => clearTimeout(pressTimer));
-  function checkAdminLogin() { const user = document.getElementById('adminUser').value; const pass = document.getElementById('adminPass').value; if(user === 'THAMER133' && pass === 'TtHh112233445566') { document.getElementById('loginAdminModal').classList.remove('active'); document.getElementById('adminModal').classList.add('active'); document.getElementById('setSiteName').value = settings.siteName; document.getElementById('setHeroTitle').value = settings.heroTitle; document.getElementById('setHeroDesc').value = settings.heroDesc; document.getElementById('setWhatsApp').value = settings.whatsapp; renderAdmin(); renderAdminReviews(); showToast('مرحباً بك!'); } else { showToast('خطأ في البيانات!', 'error'); } }
+  
+  function checkAdminLogin() { const user = document.getElementById('adminUser').value; const pass = document.getElementById('adminPass').value; if(user === 'THAMER133' && pass === 'TtHh112233445566') { document.getElementById('loginAdminModal').classList.remove('active'); document.getElementById('adminModal').classList.add('active'); document.getElementById('setSiteName').value = settings.siteName; document.getElementById('setHeroTitle').value = settings.heroTitle; document.getElementById('setHeroDesc').value = settings.heroDesc; document.getElementById('setWhatsApp').value = settings.whatsapp; renderAdmin(); renderAdminReviews(); loadCouponsFromFirebase(); showToast('مرحباً بك!'); } else { showToast('خطأ في البيانات!', 'error'); } }
   function switchTab(tabId) { document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.remove('active')); document.querySelectorAll('.admin-tab-btn').forEach(el => el.classList.remove('active')); document.getElementById(tabId).classList.add('active'); event.target.classList.add('active'); }
   function saveSettings() { settings.siteName = document.getElementById('setSiteName').value; settings.heroTitle = document.getElementById('setHeroTitle').value; settings.heroDesc = document.getElementById('setHeroDesc').value; settings.whatsapp = document.getElementById('setWhatsApp').value; localStorage.setItem('cardStoreSettings', JSON.stringify(settings)); applySettings(); showToast('تم الحفظ!'); }
+  
   function renderAdmin() { let h = ''; products.forEach(p => { h += `<div class="admin-list-item"><div><strong>${p.name}</strong></div><div><button onclick="openEditModal('${p.firebaseId}')" style="color:var(--primary); background:none; border:none; cursor:pointer; margin-left:10px;"><i class="fa-solid fa-edit"></i></button><button onclick="del('${p.firebaseId}')" style="color:var(--danger); background:none; border:none; cursor:pointer;"><i class="fa-solid fa-trash"></i></button></div></div>`; }); document.getElementById('adminList').innerHTML = h || '<p style="color:#fff;">لا توجد خدمات</p>'; }
   function renderAdminReviews() { const list = document.getElementById('adminReviewsList'); if(reviews.length === 0) { list.innerHTML = '<p style="color:#fff;">لا توجد تقييمات.</p>'; return; } list.innerHTML = reviews.map(r => `<div class="admin-list-item"><div><strong>${r.name}</strong><br><small>${r.text}</small></div><button onclick="delReview(${r.id})" style="color:var(--danger); background:none; border:none; cursor:pointer;"><i class="fa-solid fa-trash"></i></button></div>`).join(''); }
-  function delReview(id) { showConfirm('حذف التقييم؟', () => { reviews = reviews.filter(r => r.id !== id); localStorage.setItem('cardStoreReviews', JSON.stringify(reviews)); renderAdminReviews(); if(activeProduct) loadReviews(activeProduct.id); showToast('تم الحذف'); }); }
-  function openEditModal(fbId) {
-    const p = products.find(prod => prod.firebaseId === fbId);
-    if(!p) return;
-    document.getElementById('editId').value = fbId;
-    document.getElementById('editName').value = p.name;
-    document.getElementById('editImg').value = p.img;
-    document.getElementById('editDesc').value = p.desc || '';
-    for(let i=1; i<=5; i++) { document.getElementById('editOptName' + i).value = ''; document.getElementById('editOptPrice' + i).value = ''; }
-    if(p.options) { p.options.forEach((opt, index) => { if(index < 5) { document.getElementById('editOptName' + (index+1)).value = opt.optName; document.getElementById('editOptPrice' + (index+1)).value = opt.price; } }); }
-    document.getElementById('editProductModal').classList.add('active');
-    document.getElementById('adminModal').classList.remove('active');
+  
+  function renderAdminCoupons() {
+    const list = document.getElementById('adminCouponsList');
+    if(coupons.length === 0) { list.innerHTML = '<p style="color:#fff;">لا توجد كوبونات حالياً.</p>'; return; }
+    list.innerHTML = coupons.map(c => `<div class="admin-list-item"><div><strong>${c.code}</strong> - خصم ${c.discount}%</div><button onclick="delCoupon('${c.firebaseId}')" style="color:var(--danger); background:none; border:none; cursor:pointer;"><i class="fa-solid fa-trash"></i></button></div>`).join('');
   }
-  async function saveEditProduct() {
-    const fbId = document.getElementById('editId').value;
-    const n = document.getElementById('editName').value;
-    const img = document.getElementById('editImg').value;
-    const desc = document.getElementById('editDesc').value;
-    let optionsArray = [];
-    for(let i=1; i<=5; i++) { const optName = document.getElementById('editOptName' + i).value; const optPrice = parseFloat(document.getElementById('editOptPrice' + i).value); if(optName && optPrice) { optionsArray.push({ optName: optName, price: optPrice }); } }
-    if(!n || optionsArray.length === 0) return showToast('أدخل الاسم وخيار واحد على الأقل', 'error');
-    try { await db.collection("products").doc(fbId).update({ name: n, img: img, desc: desc, options: optionsArray }); showToast('تم تعديل الخدمة بنجاح!'); document.getElementById('editProductModal').classList.remove('active'); loadProductsFromFirebase(); } catch(e) { showToast('خطأ في التعديل', 'error'); }
+  
+  async function addCoupon() {
+    const code = document.getElementById('newCouponCode').value.trim().toUpperCase();
+    const discount = parseFloat(document.getElementById('newCouponDiscount').value);
+    if(!code || !discount) return showToast('أدخل اسم الكوبون ونسبة الخصم', 'error');
+    
+    try {
+      await db.collection("coupons").add({ code: code, discount: discount });
+      showToast('تمت إضافة الكوبون!');
+      document.getElementById('newCouponCode').value = '';
+      document.getElementById('newCouponDiscount').value = '';
+      loadCouponsFromFirebase();
+    } catch(e) { showToast('خطأ في الإضافة', 'error'); }
   }
+  
+  async function delCoupon(fbId) {
+    showConfirm('حذف هذا الكوبون؟', async () => {
+      try { await db.collection("coupons").doc(fbId).delete(); showToast('تم الحذف!'); loadCouponsFromFirebase(); } catch(e) { showToast('خطأ في الحذف', 'error'); }
+    });
+  }
+
+  function openEditModal(fbId) { const p = products.find(prod => prod.firebaseId === fbId); if(!p) return; document.getElementById('editId').value = fbId; document.getElementById('editName').value = p.name; document.getElementById('editImg').value = p.img; document.getElementById('editDesc').value = p.desc || ''; for(let i=1; i<=5; i++) { document.getElementById('editOptName' + i).value = ''; document.getElementById('editOptPrice' + i).value = ''; } if(p.options) { p.options.forEach((opt, index) => { if(index < 5) { document.getElementById('editOptName' + (index+1)).value = opt.optName; document.getElementById('editOptPrice' + (index+1)).value = opt.price; } }); } document.getElementById('editProductModal').classList.add('active'); document.getElementById('adminModal').classList.remove('active'); }
+  async function saveEditProduct() { const fbId = document.getElementById('editId').value; const n = document.getElementById('editName').value; const img = document.getElementById('editImg').value; const desc = document.getElementById('editDesc').value; let optionsArray = []; for(let i=1; i<=5; i++) { const optName = document.getElementById('editOptName' + i).value; const optPrice = parseFloat(document.getElementById('editOptPrice' + i).value); if(optName && optPrice) { optionsArray.push({ optName: optName, price: optPrice }); } } if(!n || optionsArray.length === 0) return showToast('أدخل الاسم وخيار واحد على الأقل', 'error'); try { await db.collection("products").doc(fbId).update({ name: n, img: img, desc: desc, options: optionsArray }); showToast('تم تعديل الخدمة بنجاح!'); document.getElementById('editProductModal').classList.remove('active'); loadProductsFromFirebase(); } catch(e) { showToast('خطأ في التعديل', 'error'); } }
   async function addProductAdmin() { const n = document.getElementById('newName').value; const img = document.getElementById('newImg').value || 'https://cdn-icons-png.flaticon.com/512/748/748137.png'; const desc = document.getElementById('newDesc').value; const optName1 = document.getElementById('optName1').value; const optPrice1 = parseFloat(document.getElementById('optPrice1').value); if(!n || !optName1 || !optPrice1) return showToast('أدخل الاسم والخيار الأول', 'error'); let optionsArray = [{ optName: optName1, price: optPrice1 }]; const optName2 = document.getElementById('optName2').value; const optPrice2 = parseFloat(document.getElementById('optPrice2').value); if(optName2 && optPrice2) optionsArray.push({ optName: optName2, price: optPrice2 }); const optName3 = document.getElementById('optName3').value; const optPrice3 = parseFloat(document.getElementById('optPrice3').value); if(optName3 && optPrice3) optionsArray.push({ optName: optName3, price: optPrice3 }); const optName4 = document.getElementById('optName4').value; const optPrice4 = parseFloat(document.getElementById('optPrice4').value); if(optName4 && optPrice4) optionsArray.push({ optName: optName4, price: optPrice4 }); const optName5 = document.getElementById('optName5').value; const optPrice5 = parseFloat(document.getElementById('optPrice5').value); if(optName5 && optPrice5) optionsArray.push({ optName: optName5, price: optPrice5 }); const newProduct = { id: Date.now(), name: n, desc: desc, img: img, options: optionsArray }; try { await db.collection("products").add(newProduct); showToast('تمت إضافة الخدمة بنجاح!'); loadProductsFromFirebase(); document.getElementById('newName').value = ''; document.getElementById('newImg').value = ''; document.getElementById('newDesc').value = ''; document.getElementById('optName1').value = ''; document.getElementById('optPrice1').value = ''; document.getElementById('optName2').value = ''; document.getElementById('optPrice2').value = ''; document.getElementById('optName3').value = ''; document.getElementById('optPrice3').value = ''; document.getElementById('optName4').value = ''; document.getElementById('optPrice4').value = ''; document.getElementById('optName5').value = ''; document.getElementById('optPrice5').value = ''; } catch(e) { console.error(e); showToast('خطأ في الإضافة', 'error'); } }
   async function del(fbId) { showConfirm('حذف هذه الخدمة؟', async () => { try { await db.collection("products").doc(fbId).delete(); showToast('تم الحذف!'); loadProductsFromFirebase(); } catch(e) { showToast('خطأ في الحذف', 'error'); } }); }
-  function resetStore() { showConfirm('سيتم مسح الإعدادات فقط (المنتجات محفوظة في السحابة)', () => { localStorage.clear(); settings = {...defaultSettings}; cart = []; currentUser = null; reviews = []; applySettings(); updateCart(); updateAuthUI(); renderAdmin(); renderAdminReviews(); showToast('تم التصفير!'); }); }
-  applySettings(); updateAuthUI(); updateCart(); loadProductsFromFirebase();
+  function resetStore() { showConfirm('سيتم مسح الإعدادات فقط (المنتجات محفوظة في السحابة)', () => { localStorage.clear(); settings = {...defaultSettings}; cart = []; currentUser = null; reviews = []; appliedCoupon = null; applySettings(); updateCart(); updateAuthUI(); renderAdmin(); renderAdminReviews(); showToast('تم التصفير!'); }); }
+  
+  applySettings(); updateAuthUI(); updateCart(); loadProductsFromFirebase(); loadCouponsFromFirebase();
 </script>
 </body>
 </html>
