@@ -673,7 +673,21 @@ window.SpeedStoreWhatsApp = Object.freeze({
       if (cause.code === "auth/too-many-requests") {
         throw error(cause.code, "تعددت محاولات الدخول. انتظر قليلًا ثم جرّب مرة ثانية.");
       }
-      throw error(cause.code, "اسم المستخدم أو كلمة المرور غير صحيحة، أو لم يكتمل إعداد تسجيل الدخول.");
+      const code = cause?.code || "auth/unknown-error";
+      const reasons = {
+        "auth/invalid-credential": "رفض Firebase بيانات الحساب. تأكد من البريد وكلمة المرور أو أعد تعيينها.",
+        "auth/wrong-password": "كلمة المرور غير صحيحة في Firebase.",
+        "auth/user-not-found": "الحساب غير موجود في مشروع Firebase الحالي.",
+        "auth/operation-not-allowed": "فعّل Email/Password في Firebase Authentication.",
+        "auth/user-disabled": "حساب Firebase معطّل.",
+        "auth/invalid-api-key": "مفتاح Firebase API غير صالح.",
+        "auth/app-not-authorized": "تطبيق الموقع غير مخوّل باستخدام مفتاح Firebase.",
+        "auth/unauthorized-domain": "نطاق الموقع غير مصرّح به في Firebase Authentication.",
+        "auth/configuration-not-found": "إعدادات Firebase Authentication غير مكتملة.",
+        "auth/internal-error": "حدث خطأ داخلي في Firebase؛ تحقق من إعدادات المشروع ومفتاح API.",
+        "auth/invalid-email": "عنوان البريد الإلكتروني غير صالح."
+      };
+      throw error(code, reasons[code] || "تعذّر تسجيل الدخول إلى Firebase.");
     }
     if (result.user.uid !== ownerUid) {
       await users.signOut(auth);
@@ -1447,7 +1461,9 @@ window.SpeedStoreWhatsApp = Object.freeze({
         observeOwner();
         login.elements.password.value = "";
       } catch (error) {
-        message(error?.message || "تعذّر تسجيل الدخول. تأكّد من اسم المستخدم وكلمة المرور وإعدادات Firebase.");
+        const code = typeof error?.code === "string" ? error.code : "unknown-error";
+        console.error("[SpeedStore] Admin login:", code);
+        message((typeof error?.code === "string" ? (error?.message || "تعذّر تسجيل الدخول إلى Firebase.") : "تعذّر تسجيل الدخول إلى Firebase.") + " — [" + code + "]");
       } finally {
         working = false;login.querySelector("button").disabled = false;syncButtons();
       }
