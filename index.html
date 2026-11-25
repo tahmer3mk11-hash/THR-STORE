@@ -45,6 +45,13 @@ button,a,summary{-webkit-tap-highlight-color:transparent}
 .button:hover{transform:translateY(-2px)}
 .nav-cta{border:1px solid #55406b;color:#eee2ff;background:#20172a;min-height:39px;padding:8px 17px;font-size:.86rem}
 .plus{font:400 1.25rem/1 Arial,sans-serif}
+.nav-contact-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.nav-support{white-space:nowrap;gap:6px}
+.nav-support svg{width:18px;height:18px;flex-shrink:0}
+@media(max-width:650px){.nav-contact-actions{gap:5px}.nav-contact-actions .nav-cta{padding-inline:8px;white-space:nowrap;font-size:.78rem}.nav-support svg{width:15px;height:15px}}
+@media(max-width:340px){.nav-contact-actions .plus{display:none}.nav-support svg{display:none}}
+.detailed-request{display:block;margin-top:.75rem;color:#cda6ff;background:none;border:0;text-decoration:underline;font:inherit;cursor:pointer}
+.sr-whatsapp-backup{width:100%;margin-top:.35rem}
 .hero{position:relative;isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 28% 60%,#2111346e,transparent 57%),#09080f;border-bottom:1px solid #292332}
 .hero-layout{min-height:clamp(440px,35vw,550px);display:grid;grid-template-columns:.93fr 1.07fr;align-items:center;gap:3%;position:relative}
 .hero-copy{padding-block:50px 56px;position:relative;z-index:1}
@@ -360,7 +367,10 @@ footer{border-top:1px solid var(--line);background:#0c0b11}.foot{padding-block:2
         <a href="#process">طريقة الطلب</a>
         <a href="#questions">الأسئلة الشائعة</a>
       </nav>
-      <button class="button nav-cta" data-request="">اطلب خدمة <span aria-hidden="true" class="plus">+</span></button>
+      <div class="nav-contact-actions">
+        <a class="button nav-cta nav-support" href="https://wa.me/966533808064" target="_blank" rel="noopener noreferrer" aria-label="الدعم عبر واتساب"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20.5 11.7a8.5 8.5 0 0 1-12.7 7.4L3.5 20.5l1.4-4.2a8.5 8.5 0 1 1 15.6-4.6Z"/><path d="M9 8c.3-.5.8-.5 1.1.1l.8 1.7c.2.4-.4.8-.6 1.1.6 1.1 1.5 2 2.7 2.6.4-.3.8-.9 1.2-.7l1.7.8c.6.3.5.8.1 1.2-.7.7-2 .6-3.6-.2-1.8-.9-3.1-2.2-3.9-3.9-.6-1.3-.5-2.1.5-2.7Z"/></svg>الدعم</a>
+        <button class="button nav-cta" data-request="">اطلب خدمة <span aria-hidden="true" class="plus">+</span></button>
+      </div>
     </div>
   </header>
   <main id="main">
@@ -404,7 +414,7 @@ footer{border-top:1px solid var(--line);background:#0c0b11}.foot{padding-block:2
 
     <section id="process" class="how" aria-labelledby="how-title">
       <div class="wrap how-inner">
-        <div class="how-title"><div class="eyebrow"><span class="bar" aria-hidden="true"></span> طريقة الطلب</div><h2 id="how-title">من وصفك <br>إلى التنفيذ.</h2><button class="button secondary" data-request="">ابدأ طلبك</button></div>
+        <div class="how-title"><div class="eyebrow"><span class="bar" aria-hidden="true"></span> طريقة الطلب</div><h2 id="how-title">من وصفك <br>إلى التنفيذ.</h2><button class="button secondary" data-request="">ابدأ طلبك</button><button type="button" class="detailed-request" data-request="" data-detailed-request>نموذج طلب مفصل</button></div>
         <ol class="steps">
           <li><span class="step-icon" aria-hidden="true">✎</span><div><h3>اكتب فكرتك</h3><p>اختر الخدمة واذكر التفاصيل اللي تهمك. تقدر تضيف مثال أو ميزانية تقريبية.</p></div></li>
           <li><span class="step-icon chat-icon" aria-hidden="true"></span><div><h3>نتفق على التفاصيل</h3><p>أراجع وصفك وأتواصل معك عشان نحدّد المطلوب والسعر ومدة التنفيذ.</p></div></li>
@@ -466,7 +476,8 @@ footer{border-top:1px solid var(--line);background:#0c0b11}.foot{padding-block:2
         </label>
         <p class="sr-error" role="alert" hidden></p>
         <p class="sr-feedback" role="status" hidden></p>
-        <button type="submit" class="sr-primary">إرسال طلب التسعيرة</button>
+        <button type="submit" class="sr-primary" data-whatsapp-request>إرسال الطلب عبر واتساب</button>
+        <button type="submit" class="sr-primary sr-whatsapp-backup">إرسال طلب التسعيرة</button>
       </form>
     </section>
     <section class="sr-receipt" hidden>
@@ -528,6 +539,14 @@ footer{border-top:1px solid var(--line);background:#0c0b11}.foot{padding-block:2
 
 <script>
 window.SPEEDSTORE_STATIC = true;
+// رقم واتساب SpeedStore (السعودية): 0533808064
+window.SpeedStoreWhatsApp = Object.freeze({
+  number: "966533808064",
+  open(message) {
+    const url = "https://wa.me/" + this.number + (message ? "?text=" + encodeURIComponent(message) : "");
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+});
 (() => {
   "use strict";
 
@@ -771,7 +790,7 @@ window.SPEEDSTORE_STATIC = true;
     status.textContent = state.error || (!state.ready ? "جارٍ تحميل الخدمات…" : "ما فيه خدمات معروضة حاليًا.");
     status.hidden = state.ready && state.products.length > 0;
     for (const button of document.querySelectorAll("button[data-request]")) {
-      button.disabled = !state.ready || !state.products.length;
+      button.disabled = button.hasAttribute("data-detailed-request") && (!state.ready || !state.products.length);
     }
   }
   function readRoute() {
@@ -954,12 +973,13 @@ window.SPEEDSTORE_STATIC = true;
     const entry = dialog.querySelector(".sr-entry");
     const receipt = dialog.querySelector(".sr-receipt");
     const error = dialog.querySelector(".sr-error");
-    const submit = form.querySelector('[type="submit"]');
+    const submit = form.querySelector('[type="submit"]:not([data-whatsapp-request])');
     const draftOnly = !window.StoreCloud.configured && (location.protocol === "file:" || window.SPEEDSTORE_STATIC === true);
     const readyLabel = draftOnly ? "تنزيل مسودة الطلب" : submit.textContent;
     const feedback = form.querySelector(".sr-feedback");
     submit.textContent = readyLabel;
-    if (draftOnly) dialog.querySelector(".sr-intro").textContent = "يمكنك تنزيل مسودة طلبك هنا. يتاح الإرسال للمتجر بعد تفعيل الربط مع Firebase.";
+    if (draftOnly) dialog.querySelector(".sr-intro").textContent = "أرسل تفاصيل طلبك عبر واتساب، أو نزّل مسودة الطلب على جهازك. يتاح الإرسال للمتجر بعد تفعيل الربط مع Firebase.";
+    else dialog.querySelector(".sr-intro").textContent = "اختر الخدمة واشرح فكرتك، ثم أرسل الطلب عبر واتساب أو عبر نموذج المتجر.";
     let opener;
     let pending = false;
     let attempt;
@@ -995,10 +1015,23 @@ window.SPEEDSTORE_STATIC = true;
       const trigger = event.target.closest("[data-request]");
       if (!trigger || trigger.disabled) return;
       event.preventDefault();
-      openRequest(trigger,trigger.dataset.request,"");
+      if (trigger.hasAttribute("data-detailed-request")) {
+        openRequest(trigger,trigger.dataset.request,"");
+        return;
+      }
+      window.SpeedStoreWhatsApp.open("السلام عليكم، أرغب بطلب خدمة من متجر SpeedStore.");
     });
     window.addEventListener("speedstore:request", event => {
-      openRequest(document.activeElement,event.detail.service,event.detail.optionId);
+      const products = window.SpeedCatalog.getState().products;
+      const product = products.find(item => item.id === event.detail.service);
+      const choice = product?.options.find(item => item.id === event.detail.optionId);
+      const lines = ["السلام عليكم، أرغب بطلب خدمة من متجر SpeedStore."];
+      if (product) {
+        lines.push("الخدمة: " + product.name);
+        if (choice) lines.push("الخيار: " + choice.name);
+        lines.push("السعر: " + selection.priceText(choice ? choice.price : product.price));
+      }
+      window.SpeedStoreWhatsApp.open(lines.join("\n"));
     });
     dialog.querySelector(".sr-close").addEventListener("click", () => dialog.close());
     dialog.querySelector(".sr-done").addEventListener("click", () => dialog.close());
@@ -1050,6 +1083,19 @@ window.SPEEDSTORE_STATIC = true;
         return;
       }
       Object.assign(details,chosen);
+      if (event.submitter?.hasAttribute("data-whatsapp-request")) {
+        const lines = ["السلام عليكم، أرغب بطلب خدمة من متجر SpeedStore.",
+          "الخدمة: " + chosen.productName,
+          chosen.optionName ? "الخيار: " + chosen.optionName : "",
+          "السعر: " + selection.priceText(chosen.price),
+          "الاسم: " + details.name, "وسيلة التواصل: " + details.contact,
+          "وصف المشروع: " + details.brief,
+          details.budget ? "الميزانية: " + details.budget : ""];
+        window.SpeedStoreWhatsApp.open(lines.filter(Boolean).join("\n"));
+        feedback.textContent = "تم تجهيز رسالة الطلب. اضغط إرسال داخل واتساب لإكمال الطلب.";
+        feedback.hidden = false;
+        return;
+      }
       if (draftOnly) {
         const text = ["طلب تسعيرة — SpeedStore", chosen.productName, chosen.optionName, "السعر: " + selection.priceText(chosen.price),
           "الاسم: " + details.name, "وسيلة التواصل: " + details.contact, "وصف المشروع: " + details.brief,
