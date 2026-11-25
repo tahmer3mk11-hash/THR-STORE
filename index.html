@@ -384,6 +384,32 @@ body{
 .detail-art{box-shadow:0 0 34px rgba(153,86,255,.11)}
 @media(max-width:720px){.hero::before{background-size:34px 34px;opacity:.7}}
 
+
+/* SpeedStore Studio upgrade — additive visual layer */
+.hero::before{animation:ss-grid-drift 24s linear infinite;background-position:0 0}
+@keyframes ss-grid-drift{to{background-position:46px 46px}}
+.hero-art img{animation:ss-float 7s ease-in-out infinite;filter:drop-shadow(0 0 22px #8847df36)}
+@keyframes ss-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+.hero h1 span{background-size:220% 100%;animation:ss-shine 8s ease-in-out infinite}
+@keyframes ss-shine{0%,100%{background-position:0 50%}50%{background-position:100% 50%}}
+.hero-actions .primary{box-shadow:0 0 25px #a86cff40}
+.service-grid .card{background:linear-gradient(145deg,#1a1425,#110e18 70%);transition:transform .24s,border-color .24s,box-shadow .24s}
+.service-grid .card:hover{transform:translateY(-5px);border-color:#9162c9}
+.card-art::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(125deg,transparent 35%,#d6a7ff16 50%,transparent 65%);transform:translateX(-110%);transition:transform .8s}
+.card:hover .card-art::after{transform:translateX(110%)}
+.ss-benefits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding-block:20px;border-bottom:1px solid #30263d}
+.ss-benefit{display:flex;gap:12px;align-items:center;padding:12px 15px;border:1px solid #372749;border-radius:12px;background:#171020a8;min-width:0}
+.ss-benefit i{font:700 22px/1 system-ui;color:#d2a5ff;font-style:normal}.ss-benefit b{display:block;font-size:.9rem}.ss-benefit small{color:#b9accb;font-size:.76rem;display:block}
+.ss-tools{display:flex;gap:10px;align-items:center;margin:0 0 22px;flex-wrap:wrap}.ss-tools input,.ss-tools select{border:1px solid #48365e;border-radius:10px;padding:11px 14px;background:#171120;color:var(--text);min-width:0}.ss-tools input{flex:1;min-width:180px}.ss-tools span{font-size:.83rem;color:#c9b1e5}.ss-tools button{border:1px solid #48365e;border-radius:10px;background:#21182d;color:#e6d6fc;padding:10px 15px}
+#store-admin:has(.adm-editor:not([hidden])){width:min(1080px,calc(100% - 1.5rem));background:radial-gradient(ellipse at 100% 0,#2a1743,transparent 55%),#14101d}
+#store-admin .adm-heading{position:sticky;top:0;z-index:3;background:#191322f5;backdrop-filter:blur(12px);padding:.65rem .75rem;border-radius:12px}
+.adm-heading-copy small{display:block;color:#bda2e2;font:600 .68rem/1.6 system-ui;letter-spacing:.12em;direction:ltr;text-align:right}
+.adm-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1rem}
+.adm-metric{background:linear-gradient(150deg,#2c1c40,#191322);border:1px solid #49345d;border-radius:12px;padding:12px;min-width:0}.adm-metric span{display:block;color:#c8b4df;font-size:.76rem}.adm-metric strong{display:block;font-size:1.3rem;color:#efdcff;overflow-wrap:anywhere}
+.adm-workspace{display:grid;grid-template-columns:minmax(220px,.75fr) minmax(0,1.7fr);gap:15px;align-items:start}.adm-library{background:#100c18aa;border:1px solid #40334d;border-radius:14px;padding:12px;min-width:0;position:sticky;top:70px}.adm-library .adm-pick{display:grid;gap:8px}.adm-list{display:grid;gap:6px;max-height:300px;overflow:auto;margin-block:10px}.adm-list button{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:right;width:100%}.adm-list button[aria-current=true]{background:#35234d!important;border-color:#b98bf3!important}.adm-list button span{min-width:0;overflow-wrap:anywhere}.adm-list small{white-space:nowrap;color:#c7b0e6}.adm-list-empty{font-size:.8rem;color:#c7b0e6}.adm-utilities{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.adm-fields{background:#181120aa}.adm-image-area{display:grid;gap:8px;padding:12px;border:1px solid #49345f;border-radius:12px;background:#110e19}.adm-preview{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:12px;align-items:center}.adm-preview img{width:100%;aspect-ratio:2.14;object-fit:cover;border-radius:9px;border:1px solid #4b3760;background:#0c0911}.adm-preview small{display:block;color:#c4addd;font-size:.79rem;overflow-wrap:anywhere}.adm-preview .adm-preview-state{font-weight:600;color:#e4cbff}.adm-option .adm-option-actions{display:flex;gap:4px;flex-wrap:wrap}.adm-option .adm-option-actions button{padding:.35rem .55rem}.adm-actions{position:sticky;bottom:0;padding:12px;background:#191322f5;backdrop-filter:blur(12px);border:1px solid #48345f;border-radius:12px;z-index:2;flex-wrap:wrap}.adm-actions .adm-primary{flex:1}.adm-status{overflow-wrap:anywhere}
+@media(max-width:720px){.ss-benefits{grid-template-columns:1fr;gap:7px}.ss-benefit{padding:8px 12px}.adm-workspace{grid-template-columns:1fr}.adm-library{position:static}.adm-list{max-height:175px}.adm-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.adm-option{grid-template-columns:minmax(0,1fr) minmax(0,.8fr)}.adm-option-actions{grid-column:1/-1;justify-content:flex-end}.adm-preview{grid-template-columns:1fr}.ss-tools input{min-width:120px}}
+@media(prefers-reduced-motion:reduce){.hero::before,.hero-art img,.hero h1 span{animation:none!important}.service-grid .card,.card-art::after{transition:none!important}.service-grid .card:hover{transform:none}}
+
 </style>
   
   
@@ -421,11 +447,14 @@ body{
       </div>
     </section>
 
+    <div class="ss-benefits wrap" aria-label="مميزات الخدمات"><div class="ss-benefit"><i aria-hidden="true">✦</i><div><b>برمجة حسب طلبك</b><small>خيارات تناسب فكرتك</small></div></div><div class="ss-benefit"><i aria-hidden="true">◈</i><div><b>أسعار وخيارات واضحة</b><small>استعرض تفاصيل كل خدمة</small></div></div><div class="ss-benefit"><i aria-hidden="true">↗</i><div><b>تواصل مباشر</b><small>اطلب الخدمة عبر واتساب</small></div></div></div>
+
     <section id="services" class="services wrap" aria-labelledby="services-heading">
       <div class="section-heading">
         <div><div class="eyebrow"><span class="bar" aria-hidden="true"></span> خدمات المتجر</div><h2 id="services-heading">وش تحتاج لمشروعك؟</h2></div>
         <p>اختر الخدمة اللي تناسب فكرتك.</p>
       </div>
+      <div class="ss-tools" aria-label="البحث في الخدمات"><input id="ss-search" type="search" placeholder="ابحث عن خدمة..." aria-label="ابحث عن خدمة"><select id="ss-sort" aria-label="ترتيب الخدمات"><option value="default">ترتيب المتجر</option><option value="name">الاسم</option><option value="low">السعر: الأقل أولًا</option><option value="high">السعر: الأعلى أولًا</option></select><button type="button" id="ss-clear">مسح البحث</button><span id="ss-count" aria-live="polite"></span></div>
       <p id="catalog-status" class="catalog-status" role="status" hidden></p>
       <div id="product-grid" class="service-grid">
         <article class="card" data-seed="servers">
@@ -524,7 +553,7 @@ body{
   <dialog id="store-admin" dir="rtl" aria-labelledby="adm-title">
   <div class="adm-shell">
     <div class="adm-heading">
-      <h2 id="adm-title">إدارة المتجر</h2>
+      <div class="adm-heading-copy"><small>SPEEDSTORE STUDIO</small><h2 id="adm-title">إدارة المتجر</h2></div>
       <button class="adm-close" type="button" aria-label="إغلاق لوحة الإدارة">×</button>
     </div>
     <section class="adm-setup" hidden>
@@ -540,10 +569,14 @@ body{
     <section class="adm-editor" hidden>
       <div class="adm-bar"><h3>المنتجات والخدمات</h3><button type="button" class="adm-signout">تسجيل الخروج</button></div>
       <div class="adm-edit-body" hidden>
+        <div class="adm-metrics" aria-label="ملخص الكتالوج"><div class="adm-metric"><span>المنتجات</span><strong data-metric="products">—</strong></div><div class="adm-metric"><span>خيارات الخدمات</span><strong data-metric="options">—</strong></div><div class="adm-metric"><span>صور مخصصة</span><strong data-metric="images">—</strong></div><div class="adm-metric"><span>حالة الحفظ</span><strong data-metric="save">—</strong></div></div>
+        <div class="adm-workspace"><aside class="adm-library"><label>بحث عن منتج<input class="adm-search" type="search" placeholder="اسم المنتج..."></label>
         <div class="adm-pick">
           <label>اختر منتجًا للتعديل<span class="adm-select"><select class="adm-product"></select></span></label>
           <button type="button" class="adm-add-product">إضافة منتج</button>
         </div>
+        <div class="adm-list" aria-label="قائمة المنتجات"></div>
+        <div class="adm-utilities"><button type="button" class="adm-duplicate">نسخ المنتج</button><button type="button" class="adm-move-up">رفع ↑</button><button type="button" class="adm-move-down">خفض ↓</button><button type="button" class="adm-export">تصدير نسخة JSON</button></div></aside><div class="adm-editor-main">
         <p class="adm-empty" hidden>الكتالوج فارغ. أضف أول منتج لعرضه في المتجر.</p>
         <fieldset class="adm-fields" hidden>
           <legend>تفاصيل المنتج</legend>
@@ -553,11 +586,13 @@ body{
             <label>السعر الأساسي بالريال<input data-key="price" type="text" dir="auto" inputmode="decimal" maxlength="14" placeholder="حسب الطلب"></label>
             <label>صورة المنتج<span class="adm-select"><select data-key="image"><option value="servers">سيرفر ديسكورد</option><option value="bots">بوت ديسكورد</option><option value="websites">موقع إلكتروني</option></select></span></label>
           </div>
+          <div class="adm-image-area"><label>رابط صورة المنتج (URL)<input data-key="imageUrl" type="url" dir="ltr" maxlength="2048" placeholder="https://example.com/image.png" spellcheck="false"></label><div class="adm-preview"><img class="adm-preview-img" alt="معاينة صورة المنتج" referrerpolicy="no-referrer"><div><small class="adm-preview-state" role="status">الصورة الافتراضية</small><small>الصق رابط HTTPS مباشر للصورة. عند تركه فارغًا تظهر الصورة المختارة أعلاه.</small><button type="button" class="adm-clear-image">استخدام الصورة الافتراضية</button></div></div></div>
           <div class="adm-subhead"><h4>خيارات المنتج</h4><button type="button" class="adm-add-option">إضافة خيار</button></div>
           <p class="adm-hint">اترك خانة السعر فارغة لعرض «حسب الطلب».</p>
           <div class="adm-options"></div>
           <button type="button" class="adm-danger adm-remove-product">حذف المنتج</button>
         </fieldset>
+        </div></div>
       </div>
       <div class="adm-actions">
         <button class="adm-primary adm-save" type="button">حفظ الكتالوج</button>
@@ -778,10 +813,14 @@ window.SpeedStoreWhatsApp = Object.freeze({
   const cloud = window.StoreCloud;
   const selections = new Map();
   let state = {products: [], revision: 0, ready: false, error: null};
+  function safeImageUrl(value) {
+    if (typeof value !== "string" || value.length > 2048 || !value.trim()) return "";
+    try { const url = new URL(value.trim()); return url.protocol === "https:" && !url.username && !url.password ? url.href : ""; } catch { return ""; }
+  }
   const imageUrl = slug => images.get(slug) || images.get("websites");
   window.SpeedCatalog = {
     getState: () => structuredClone(state),
-    imageUrl
+    imageUrl, safeImageUrl
   };
 
   function element(tag, className, text) {
@@ -806,11 +845,15 @@ window.SpeedStoreWhatsApp = Object.freeze({
   function goodSnapshot(value) {
     return value && Number.isSafeInteger(value.revision) && value.revision >= 0 &&
       validItems(value.products, 80, item => typeof item.description === "string" && item.description.length <= 1000 &&
-        images.has(item.image) && validItems(item.options, 40, () => true));
+        images.has(item.image) && (item.imageUrl === undefined || item.imageUrl === "" || !!safeImageUrl(item.imageUrl)) && validItems(item.options, 40, () => true));
   }
   function makeImage(product, lazy = false) {
     const img = element("img");
-    img.src = imageUrl(product.image);
+    const fallback = imageUrl(product.image);
+    const custom = safeImageUrl(product.imageUrl);
+    img.referrerPolicy = "no-referrer";
+    if (custom) img.addEventListener("error", () => { img.src = fallback; }, {once:true});
+    img.src = custom || fallback;
     img.alt = "";
     img.width = 942;
     img.height = 471;
@@ -839,9 +882,16 @@ window.SpeedStoreWhatsApp = Object.freeze({
     return card;
   }
   function updateGrid() {
-    grid.replaceChildren(...state.products.map(makeCard));
-    status.textContent = state.error || (!state.ready ? "جارٍ تحميل الخدمات…" : "ما فيه خدمات معروضة حاليًا.");
-    status.hidden = state.ready && state.products.length > 0;
+    const query = document.getElementById("ss-search").value.trim().toLocaleLowerCase("ar");
+    const sort = document.getElementById("ss-sort").value;
+    const lowest = p => {const nums = (p.options.length ? p.options.map(o=>o.price) : [p.price]).filter(n=>n!==null); return nums.length ? Math.min(...nums) : null;};
+    const shown = state.products.filter(p => (p.name + " " + p.description).toLocaleLowerCase("ar").includes(query));
+    if (sort === "name") shown.sort((a,b)=>a.name.localeCompare(b.name,"ar"));
+    if (sort === "low" || sort === "high") shown.sort((a,b)=>{const x=lowest(a),y=lowest(b);return x===null?(y===null?0:1):y===null?-1:(sort==="low"?x-y:y-x);});
+    grid.replaceChildren(...shown.map(makeCard));
+    document.getElementById("ss-count").textContent = state.ready ? shown.length + " / " + state.products.length + " خدمة" : "";
+    status.textContent = state.error || (!state.ready ? "جارٍ تحميل الخدمات…" : query && state.products.length ? "ما لقينا خدمة تطابق بحثك." : "ما فيه خدمات معروضة حاليًا.");
+    status.hidden = state.ready && shown.length > 0;
     for (const button of document.querySelectorAll("button[data-request]")) {
       button.disabled = button.hasAttribute("data-detailed-request") && (!state.ready || !state.products.length);
     }
@@ -953,6 +1003,9 @@ window.SpeedStoreWhatsApp = Object.freeze({
   function loadFailed() {
     update({products: [], revision: 0, ready: false, error: "تعذّر تحميل الخدمات. تأكّد من الاتصال وحدّث الصفحة للمحاولة مجددًا."});
   }
+  document.getElementById("ss-search").addEventListener("input", updateGrid);
+  document.getElementById("ss-sort").addEventListener("change", updateGrid);
+  document.getElementById("ss-clear").addEventListener("click", () => { document.getElementById("ss-search").value = ""; document.getElementById("ss-sort").value = "default"; updateGrid(); });
   window.addEventListener("hashchange", () => renderRoute(true));
   if (cloud?.catalogConfigured) {
     // Preserve the bundled storefront during setup; switch to the live catalog after a server read.
@@ -1331,6 +1384,37 @@ window.SpeedStoreWhatsApp = Object.freeze({
     const message = text => {status.textContent = text;};
     const pending = () => dirty || base === 0;
 
+    function renderMetrics() {
+      const values = {products:draft?.length ?? 0,options:draft?.reduce((n,p)=>n+p.options.length,0) ?? 0,images:draft?.filter(p=>!!window.SpeedCatalog.safeImageUrl(p.imageUrl)).length ?? 0,save:working?"جارٍ الحفظ":pending()?"غير محفوظ":"محفوظ"};
+      for (const [key,value] of Object.entries(values)) $(`[data-metric="${key}"]`).textContent = value;
+      const index = draft?.findIndex(p=>p.id===selected) ?? -1;
+      $(".adm-duplicate").disabled = !current() || draft.length>=80;
+      $(".adm-move-up").disabled = index<=0;
+      $(".adm-move-down").disabled = index<0 || index>=draft.length-1;
+      $(".adm-export").disabled = !draft;
+    }
+    function renderLibrary() {
+      const list = $(".adm-list"), query = $(".adm-search").value.trim().toLocaleLowerCase("ar");
+      list.replaceChildren();
+      for (const p of draft || []) {
+        if (!(p.name + " " + p.description).toLocaleLowerCase("ar").includes(query)) continue;
+        const button = document.createElement("button"); button.type="button"; button.dataset.productId=p.id; button.setAttribute("aria-current", String(p.id===selected));
+        const name=document.createElement("span"), count=document.createElement("small"); name.textContent=p.name || "منتج جديد"; count.textContent=p.options.length+" خيار";button.append(name,count);list.append(button);
+      }
+      if (!list.children.length) {const empty=document.createElement("span");empty.className="adm-list-empty";empty.textContent="لا توجد نتائج";list.append(empty);}
+    }
+    let previewToken=0;
+    function renderPreview() {
+      const product=current(); if(!product)return;
+      const image=$(".adm-preview-img"), note=$(".adm-preview-state"), token=++previewToken;
+      const custom=window.SpeedCatalog.safeImageUrl(product.imageUrl), fallback=window.SpeedCatalog.imageUrl(product.image);
+      image.onload=null;image.onerror=null;
+      note.textContent=product.imageUrl?(custom?"جارٍ تحميل الصورة…":"الرابط غير صالح؛ استخدم HTTPS"):"الصورة الافتراضية";
+      if(custom){ image.onload=()=>{if(token===previewToken)note.textContent="الصورة جاهزة";};image.onerror=()=>{if(token!==previewToken)return;image.onload=null;image.onerror=null;image.src=fallback;note.textContent="تعذّر تحميل الرابط؛ تظهر الصورة الافتراضية.";}; }
+      const target=custom||fallback;
+      if(image.getAttribute("src")!==target)image.src=target;
+      else if(custom && image.complete && image.naturalWidth)note.textContent="الصورة جاهزة";
+    }
     function syncButtons() {
       const data = state();
       const behind = draft !== null && usable(data) && data.revision > base;
@@ -1340,6 +1424,7 @@ window.SpeedStoreWhatsApp = Object.freeze({
       $(".adm-signout").disabled = working;
       $(".adm-edit-body").inert = working;
       save.textContent = working && owner ? "جارٍ الحفظ…" : "حفظ الكتالوج";
+      renderMetrics();
     }
     function redrawOptions() {
       const box = $(".adm-options");
@@ -1366,7 +1451,9 @@ window.SpeedStoreWhatsApp = Object.freeze({
         remove.className = "adm-danger";
         remove.dataset.remove = "option";
         remove.textContent = "حذف الخيار";
-        row.append(remove);
+        const actions=document.createElement("div");actions.className="adm-option-actions";
+        for(const [dir,label] of [[-1,"↑"],[1,"↓"]]){const b=document.createElement("button");b.type="button";b.dataset.move=String(dir);b.textContent=label;b.setAttribute("aria-label",dir<0?"رفع الخيار":"خفض الخيار");const index=product.options.indexOf(opt);b.disabled=index+dir<0||index+dir>=product.options.length;actions.append(b);}
+        actions.append(remove);row.append(actions);
         box.append(row);
       }
       addOption.disabled = (product?.options.length || 0) >= 40;
@@ -1385,6 +1472,7 @@ window.SpeedStoreWhatsApp = Object.freeze({
         for (const input of fields.querySelectorAll("[data-key]")) input.value = product[input.dataset.key] ?? "";
       }
       redrawOptions();
+      renderLibrary();renderPreview();
       syncButtons();
     }
     function adopt(data) {
@@ -1475,14 +1563,22 @@ window.SpeedStoreWhatsApp = Object.freeze({
       } catch { message("تعذّر تسجيل الخروج. حاول مرة ثانية."); }
     });
     function markChanged() {
-      dirty = true;message("عندك تعديلات بانتظار الحفظ.");syncButtons();
+      dirty = true;message("عندك تعديلات بانتظار الحفظ.");renderLibrary();syncButtons();
     }
+    $(".adm-search").addEventListener("input",renderLibrary);
+    $(".adm-list").addEventListener("click", event=>{const b=event.target.closest("[data-product-id]");if(b&&owner&&!working){selected=b.dataset.productId;renderProduct();}});
+    $(".adm-clear-image").addEventListener("click",()=>{if(!owner||working||!current())return;current().imageUrl="";fields.querySelector('[data-key="imageUrl"]').value="";renderPreview();markChanged();});
+    $(".adm-duplicate").addEventListener("click",()=>{if(!owner||working||!current()||draft.length>=80)return;const copy=clone(current());copy.id="p-"+crypto.randomUUID();copy.name=(copy.name.slice(0,90)+" - نسخة").slice(0,100);draft.splice(draft.findIndex(p=>p.id===selected)+1,0,copy);selected=copy.id;markChanged();renderProduct();});
+    function moveProduct(delta){if(!owner||working||!current())return;const i=draft.findIndex(p=>p.id===selected),j=i+delta;if(j<0||j>=draft.length)return;[draft[i],draft[j]]=[draft[j],draft[i]];markChanged();renderProduct();}
+    $(".adm-move-up").addEventListener("click",()=>moveProduct(-1));$(".adm-move-down").addEventListener("click",()=>moveProduct(1));
+    $(".adm-export").addEventListener("click",()=>{if(!owner||working||!draft)return;const url=URL.createObjectURL(new Blob([JSON.stringify({revision:base,products:draft},null,2)],{type:"application/json"}));const a=document.createElement("a");a.href=url;a.download="SpeedStore-catalog-backup.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
     picker.addEventListener("change", () => {selected = picker.value;renderProduct();});
     fields.addEventListener("input", event => {
       if (!owner || working || !current()) return;
       const input = event.target;
       if (input.dataset.key) {
         current()[input.dataset.key] = input.value;
+        if (["imageUrl","image"].includes(input.dataset.key)) renderPreview();
         if (input.dataset.key === "name") picker.selectedOptions[0].textContent = input.value || "منتج جديد";
       } else if (input.dataset.opt) {
         const opt = current().options.find(item => item.id === input.closest(".adm-option").dataset.id);
@@ -1508,6 +1604,8 @@ window.SpeedStoreWhatsApp = Object.freeze({
       markChanged();redrawOptions();$(".adm-options").lastElementChild.querySelector("input").focus();
     });
     $(".adm-options").addEventListener("click", event => {
+      const move=event.target.closest("button[data-move]");
+      if(move){if(!owner||working||!current())return;const opts=current().options,i=opts.findIndex(o=>o.id===move.closest(".adm-option").dataset.id),j=i+Number(move.dataset.move);if(i>=0&&j>=0&&j<opts.length){[opts[i],opts[j]]=[opts[j],opts[i]];markChanged();redrawOptions();}return;}
       const remove = event.target.closest("button[data-remove]");
       if (!remove || !owner || working || !current() || !confirm("حذف هذا الخيار من المسودة؟")) return;
       current().options = current().options.filter(opt => opt.id !== remove.closest(".adm-option").dataset.id);
@@ -1526,6 +1624,10 @@ window.SpeedStoreWhatsApp = Object.freeze({
           if (!p.name || p.name.length > 100) throw new Error("اكتب اسمًا للمنتج في حدود ١٠٠ حرف.");
           p.description = p.description.trim();
           if (p.description.length > 1000) throw new Error("اختصر وصف المنتج إلى ١٠٠٠ حرف.");
+          if (p.imageUrl !== undefined) {
+            p.imageUrl = p.imageUrl.trim();
+            if (p.imageUrl && !window.SpeedCatalog.safeImageUrl(p.imageUrl)) throw new Error("أدخل رابط صورة HTTPS صالحًا أو اتركه فارغًا.");
+          }
           p.price = normalizePrice(p.price);
           for (const opt of p.options) {
             opt.name = opt.name.trim();
