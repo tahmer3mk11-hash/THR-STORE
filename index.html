@@ -11,7 +11,9 @@ window.SPEEDSTORE_FIREBASE = {
     projectId: "",
     appId: ""
   },
-  ownerUid: ""
+  ownerUid: "",
+  // البريد الإلكتروني لحساب Thamer في Firebase Authentication (ليس كلمة المرور).
+  ownerEmail: ""
 };
 
 </script>
@@ -312,7 +314,7 @@ footer{border-top:1px solid var(--line);background:#0c0b11}.foot{padding-block:2
 }
 
 .brand{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;touch-action:pan-y;position:relative}
-.brand.adm-holding::after{content:"";position:absolute;height:2px;inset-inline:0;bottom:-5px;background:#cea7ff;transform-origin:right center;animation:adm-progress 15s linear both;pointer-events:none}
+.brand.adm-holding::after{content:none!important}
 @keyframes adm-progress{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 :root:has(#store-admin[open]){overflow:hidden}
 #store-admin{width:min(39rem,calc(100% - 1.5rem));max-height:calc(100dvh - 1.5rem);padding:0;margin:auto;overflow:auto;overscroll-behavior:contain;color:#fbf8ff;background:#15111b;border:1px solid #50425e;border-radius:1.25rem;font:inherit;line-height:1.65;box-shadow:0 1.25rem 5rem #000a}
@@ -501,8 +503,8 @@ footer{border-top:1px solid var(--line);background:#0c0b11}.foot{padding-block:2
       <p>لتفعيل لوحة الإدارة، افتح دليل ربط Firebase المرفق مع ملفات المتجر، وأضف إعدادات مشروعك ومعرّف حسابك، ثم افتح نسخة المتجر المتصلة.</p>
     </section>
     <form class="adm-login" hidden>
-      <p>ادخل بحساب المالك المسجّل في Firebase.</p>
-      <label>البريد الإلكتروني<input type="email" name="email" dir="ltr" required autocomplete="username"></label>
+      <p>أدخل اسم المستخدم وكلمة المرور لحساب إدارة المتجر.</p>
+      <label>اسم المستخدم<input type="text" name="username" dir="ltr" required autocomplete="username" autocapitalize="none" spellcheck="false"></label>
       <label>كلمة المرور<input type="password" name="password" dir="ltr" required autocomplete="current-password"></label>
       <button class="adm-primary" type="submit">تسجيل الدخول</button>
     </form>
@@ -553,6 +555,8 @@ window.SpeedStoreWhatsApp = Object.freeze({
   const settings = window.SPEEDSTORE_FIREBASE || {};
   const config = settings.firebaseConfig || {};
   const ownerUid = (settings.ownerUid || "").trim();
+  const ownerEmail = (settings.ownerEmail || "").trim();
+  const ownerUsername = "Thamer";
   const configured = ["apiKey", "authDomain", "projectId", "appId"].every(
     key => typeof config[key] === "string" && config[key].trim()
   ) && Boolean(ownerUid) && ownerUid !== "REPLACE_WITH_OWNER_UID";
@@ -622,12 +626,16 @@ window.SpeedStoreWhatsApp = Object.freeze({
     }, () => callback(null)), () => callback(null));
   }
 
-  async function signIn(email, password) {
+  async function signIn(username, password) {
+    if (!configured || !ownerEmail) throw error("setup-required", "لم يكتمل إعداد تسجيل الدخول بعد.");
+    if (String(username).trim().toLowerCase() !== ownerUsername.toLowerCase()) {
+      throw error("invalid-credentials", "اسم المستخدم أو كلمة المرور غير صحيحة.");
+    }
     const {auth, users} = await connect();
     await users.setPersistence(auth, users.browserSessionPersistence);
     let result;
     try {
-      result = await users.signInWithEmailAndPassword(auth, email.trim(), password);
+      result = await users.signInWithEmailAndPassword(auth, ownerEmail, password);
     } catch (cause) {
       if (cause.code === "auth/network-request-failed") {
         throw error(cause.code, "تعذّر الاتصال بـ Firebase. تحقق من الشبكة ثم أعد المحاولة.");
@@ -635,7 +643,7 @@ window.SpeedStoreWhatsApp = Object.freeze({
       if (cause.code === "auth/too-many-requests") {
         throw error(cause.code, "تعددت محاولات الدخول. انتظر قليلًا ثم جرّب مرة ثانية.");
       }
-      throw error(cause.code, "تعذّر تسجيل الدخول. تحقق من البريد وكلمة المرور وتفعيل تسجيل الدخول بالبريد.");
+      throw error(cause.code, "اسم المستخدم أو كلمة المرور غير صحيحة، أو لم يكتمل إعداد تسجيل الدخول.");
     }
     if (result.user.uid !== ownerUid) {
       await users.signOut(auth);
@@ -1354,7 +1362,7 @@ window.SpeedStoreWhatsApp = Object.freeze({
     }
     function renderAccess() {
       setup.hidden = !!cloud?.configured;
-      login.hidden = !cloud?.configured || !authChecked || !!owner;
+      login.hidden = !!owner || (!!cloud?.configured && !authChecked);
       editor.hidden = !cloud?.configured || !owner;
       if (!cloud?.configured) {message("");return;}
       if (owner) catalogChanged();
@@ -1390,16 +1398,16 @@ window.SpeedStoreWhatsApp = Object.freeze({
     window.addEventListener("speedstore:catalog", catalogChanged);
     login.addEventListener("submit", async event => {
       event.preventDefault();
-      if (working || !cloud?.configured) return;
+      if (working) return;
       working = true;
       login.querySelector("button").disabled = true;
       message("جارٍ تسجيل الدخول…");
       try {
-        await cloud.signIn(login.elements.email.value.trim(), login.elements.password.value);
+        await cloud.signIn(login.elements.username.value.trim(), login.elements.password.value);
         observeOwner();
         login.elements.password.value = "";
       } catch (error) {
-        message(error?.message || "تعذّر تسجيل الدخول. تأكّد من بيانات حساب المالك وتفعيل البريد وكلمة المرور في Firebase.");
+        message(error?.message || "تعذّر تسجيل الدخول. تأكّد من اسم المستخدم وكلمة المرور وإعدادات Firebase.");
       } finally {
         working = false;login.querySelector("button").disabled = false;syncButtons();
       }
