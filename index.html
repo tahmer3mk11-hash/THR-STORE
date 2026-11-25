@@ -6,10 +6,12 @@
 // أدخل معرّف المالك نفسه في firestore.rules قبل نشر القواعد.
 window.SPEEDSTORE_FIREBASE = {
   firebaseConfig: {
-    apiKey: "",
-    authDomain: "",
-    projectId: "",
-    appId: ""
+    apiKey: "AIzaSyD004hg5d92F7hMeCLJmczaF2AElGGPo1g",
+    authDomain: "thr-store.firebaseapp.com",
+    projectId: "thr-store",
+    storageBucket: "thr-store.firebasestorage.app",
+    messagingSenderId: "253023759221",
+    appId: "1:253023759221:web:399127c8670beef599413c"
   },
   ownerUid: "",
   // البريد الإلكتروني لحساب Thamer في Firebase Authentication (ليس كلمة المرور).
@@ -355,6 +357,33 @@ footer{border-top:1px solid var(--line);background:#0c0b11}.foot{padding-block:2
 #store-admin .adm-status{margin:1rem 0 0;color:#dbc3fb}#store-admin .adm-status:empty{margin:0}
 @media(max-width:430px){.adm-shell{padding:.95rem}.adm-pair{grid-template-columns:1fr}.adm-option{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}#store-admin .adm-option button{grid-column:1/-1;justify-self:end;min-height:2rem}.adm-option+.adm-option{border-top:1px solid #392f43;padding-top:.55rem}}
 
+
+/* SpeedStore — neon background enhancement */
+body{
+  background-color:#090810;
+  background-image:radial-gradient(ellipse at 12% 28%,rgba(123,50,224,.16),transparent 38%),radial-gradient(ellipse at 92% 68%,rgba(86,38,166,.14),transparent 40%);
+  background-repeat:no-repeat;
+}
+.hero{
+  background:radial-gradient(ellipse at 24% 50%,rgba(131,52,227,.23),transparent 57%),radial-gradient(ellipse at 88% 10%,rgba(100,55,217,.15),transparent 48%),#09080f;
+}
+.hero::before{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background-image:linear-gradient(rgba(170,113,255,.065) 1px,transparent 1px),linear-gradient(90deg,rgba(170,113,255,.065) 1px,transparent 1px);
+  background-size:46px 46px;
+  mask-image:radial-gradient(ellipse at 38% 50%,#000 4%,transparent 77%);
+}
+.hero::after{
+  content:"";position:absolute;inset:auto 0 0;pointer-events:none;height:1px;
+  background:linear-gradient(90deg,transparent,#aa6aff88,transparent);
+  box-shadow:0 0 18px #a163ff66;
+}
+.how{background:radial-gradient(ellipse at 90% 12%,rgba(123,48,212,.10),transparent 65%),#100e16}
+.service-grid .card{box-shadow:0 12px 35px rgba(0,0,0,.18);transition:border-color .2s,box-shadow .2s}
+.service-grid .card:hover,.service-grid .card:focus-within{box-shadow:0 0 28px rgba(156,88,250,.16),0 14px 40px rgba(0,0,0,.22)}
+.detail-art{box-shadow:0 0 34px rgba(153,86,255,.11)}
+@media(max-width:720px){.hero::before{background-size:34px 34px;opacity:.7}}
+
 </style>
   
   
@@ -500,7 +529,7 @@ footer{border-top:1px solid var(--line);background:#0c0b11}.foot{padding-block:2
     </div>
     <section class="adm-setup" hidden>
       <h3>اربط حساب المالك</h3>
-      <p>لتفعيل لوحة الإدارة، افتح دليل ربط Firebase المرفق مع ملفات المتجر، وأضف إعدادات مشروعك ومعرّف حسابك، ثم افتح نسخة المتجر المتصلة.</p>
+      <p>إعدادات المشروع موجودة. لتفعيل لوحة الإدارة، أضف البريد الإلكتروني وUID حساب المالك من Firebase Authentication إلى إعدادات الموقع، ثم انشر قواعد Firestore المناسبة.</p>
     </section>
     <form class="adm-login" hidden>
       <p>أدخل اسم المستخدم وكلمة المرور لحساب إدارة المتجر.</p>
@@ -557,9 +586,10 @@ window.SpeedStoreWhatsApp = Object.freeze({
   const ownerUid = (settings.ownerUid || "").trim();
   const ownerEmail = (settings.ownerEmail || "").trim();
   const ownerUsername = "Thamer";
-  const configured = ["apiKey", "authDomain", "projectId", "appId"].every(
+  const catalogConfigured = ["apiKey", "authDomain", "projectId", "appId"].every(
     key => typeof config[key] === "string" && config[key].trim()
-  ) && Boolean(ownerUid) && ownerUid !== "REPLACE_WITH_OWNER_UID";
+  );
+  const configured = catalogConfigured && Boolean(ownerUid) && ownerUid !== "REPLACE_WITH_OWNER_UID" && Boolean(ownerEmail);
   const cdn = "https://www.gstatic.com/firebasejs/13.4.0";
   const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
   let loading;
@@ -569,7 +599,7 @@ window.SpeedStoreWhatsApp = Object.freeze({
   }
 
   async function connect() {
-    if (!configured) throw error("setup-required", "أكمل ربط المتجر بمشروع Firebase أولاً.");
+    if (!catalogConfigured) throw error("setup-required", "أكمل ربط المتجر بمشروع Firebase أولاً.");
     if (!loading) {
       loading = Promise.all([
         import(cdn + "/firebase-app.js"),
@@ -601,7 +631,7 @@ window.SpeedStoreWhatsApp = Object.freeze({
   }
 
   function watchCatalog(onData, onError = () => {}) {
-    if (!configured) {
+    if (!catalogConfigured) {
       onData(null);
       return () => {};
     }
@@ -658,6 +688,7 @@ window.SpeedStoreWhatsApp = Object.freeze({
   }
 
   async function saveCatalog(products, expectedRevision) {
+    if (!configured) throw error("setup-required", "أكمل إعداد حساب المالك أولاً.");
     const {auth, store, db} = await connect();
     if (auth.currentUser?.uid !== ownerUid) throw error("owner-required", "سجّل الدخول بحساب مالك المتجر.");
     if (!Array.isArray(products) || products.length > 80) throw error("invalid-catalog", "الحد الأعلى للكتالوج ٨٠ منتجًا.");
@@ -703,7 +734,7 @@ window.SpeedStoreWhatsApp = Object.freeze({
     return {reference: id};
   }
 
-  window.StoreCloud = Object.freeze({configured, watchCatalog, onAuth, signIn, signOut, saveCatalog, sendRequest});
+  window.StoreCloud = Object.freeze({configured, catalogConfigured, watchCatalog, onAuth, signIn, signOut, saveCatalog, sendRequest});
 })();
 
 (() => {
@@ -909,15 +940,24 @@ window.SpeedStoreWhatsApp = Object.freeze({
     update({products: [], revision: 0, ready: false, error: "تعذّر تحميل الخدمات. تأكّد من الاتصال وحدّث الصفحة للمحاولة مجددًا."});
   }
   window.addEventListener("hashchange", () => renderRoute(true));
-  if (cloud?.configured) {
-    update(state);
+  if (cloud?.catalogConfigured) {
+    // Preserve the bundled storefront during setup; switch to the live catalog after a server read.
+    if (!cloud.configured) update({products: defaults, revision: 0, ready: true, error: null});
+    else update(state);
+    const handleCloudError = () => {
+      if (!cloud.configured) {
+        console.warn("SpeedStore: Firestore catalog not available; showing bundled products during setup.");
+        return;
+      }
+      loadFailed();
+    };
     try {
       cloud.watchCatalog(value => {
         if (value === null) update({products: defaults, revision: 0, ready: true, error: null});
         else if (goodSnapshot(value)) update({products: value.products, revision: value.revision, ready: true, error: null});
         else loadFailed();
-      }, loadFailed);
-    } catch { loadFailed(); }
+      }, handleCloudError);
+    } catch { handleCloudError(); }
   } else {
     update({products: defaults, revision: 0, ready: true, error: null});
   }
