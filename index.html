@@ -538,6 +538,8 @@ body{
         <p class="sr-feedback" role="status" hidden></p>
         <button type="submit" class="sr-primary" data-whatsapp-request>إرسال الطلب عبر واتساب</button>
         <button type="submit" class="sr-primary sr-whatsapp-backup">إرسال طلب التسعيرة</button>
+        <button type="button" class="sr-primary" id="ss-pay-test" hidden style="margin-top:.5rem;width:100%;background:#c49aff;color:#21132e">SPEEDSTORE PAY — دفع تجريبي (١ ر.س)</button>
+        <p id="ss-pay-note" role="status" hidden style="color:#d9c3fa;font-size:.85rem;margin:.5rem 0">اختبار محلي فقط؛ لا تستخدم بطاقة حقيقية. المبلغ التجريبي ثابت ولا ينشئ طلبًا فعليًا.</p>
       </form>
     </section>
     <section class="sr-receipt" hidden>
@@ -1667,6 +1669,41 @@ window.SpeedStoreWhatsApp = Object.freeze({
   else start();
 })();
 
+</script>
+
+<script>
+(() => {
+  // This adapter intentionally runs only on the local sandbox server.
+  if (location.origin !== 'http://127.0.0.1:8765') return;
+  const button = document.getElementById('ss-pay-test');
+  const note = document.getElementById('ss-pay-note');
+  const form = button.closest('form');
+  const initial = button.textContent;
+  let busy = false;
+  let attempt = null;
+  button.hidden = false; note.hidden = false;
+  button.addEventListener('click', async () => {
+    if (busy) return;
+    const service = form.elements.service.value;
+    const option = form.elements.optionId.value;
+    const state = window.SpeedCatalog.getState();
+    const product = state.products.find(x => x.id === service);
+    if (!product || (product.options.length && !product.options.some(x=>x.id===option))) {
+      note.textContent = 'اختر الخدمة والخيار أولاً.'; return;
+    }
+    busy = true; button.disabled = true; button.textContent = 'جارٍ تجهيز صفحة الدفع…';
+    note.textContent = 'المبلغ التجريبي ١ ر.س، لا توجد أموال حقيقية.';
+    const signature = JSON.stringify([service, option]);
+    if (!attempt || attempt.signature !== signature) attempt = {signature, id: crypto.randomUUID()};
+    try {
+      const r = await fetch('/api/test-payment', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({service,option,attempt:attempt.id})});
+      const data = await r.json();
+      if (!r.ok || !data.url) throw new Error(data.error || 'تعذر إنشاء عملية الدفع');
+      location.assign(data.url);
+    } catch (e) { note.textContent = e.message || 'تعذّر الاتصال بخادم الاختبار.'; }
+    finally {busy = false; button.disabled = false; button.textContent = initial;}
+  });
+})();
 </script>
 </body><!--
 Noto Kufi Arabic Medium
