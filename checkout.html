@@ -1,296 +1,33 @@
-"""Local SPEEDSTORE PAY integration. Sandbox by default; live requires separate deployment/review."""
-import os, json, sqlite3, secrets, re, sys, time, urllib.request, urllib.parse, urllib.error, getpass, webbrowser, threading, contextlib
-from pathlib import Path
-from decimal import Decimal, InvalidOperation
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from html import escape
-ROOT=Path(__file__).resolve().parent
-MODE=os.environ.get('PAY_MODE','sandbox')
-ORIGIN=os.environ.get('STORE_PUBLIC_ORIGIN','http://127.0.0.1:8765').rstrip('/')
-FRONT=os.environ.get('STORE_FRONTEND_ORIGIN',ORIGIN).rstrip('/')
-API=os.environ.get('HS_API_URL','http://127.0.0.1:8080').rstrip('/')
-LINK_ORIGIN=os.environ.get('HS_PAYMENT_LINK_ORIGIN','http://127.0.0.1:8080').rstrip('/')
-CATALOG='https://firestore.googleapis.com/v1/projects/thr-store/databases/(default)/documents/speedstore/catalog'
-DB=Path(os.environ.get('PAY_DB',str(ROOT/('orders_'+MODE+'.sqlite3'))))
-KEY=os.environ.get('HS_API_KEY',''); PROFILE=os.environ.get('HS_PROFILE_ID','')
-ID=re.compile(r'^[A-Za-z0-9_-]{1,80}$'); UUID=re.compile(r'^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$'); TOKEN=re.compile(r'^[A-Za-z0-9_-]{43}$')
-class Problem(Exception): pass
-class UpstreamProblem(Problem):
-    def __init__(self,message,code=None):
-        super().__init__(message);self.code=code
-
-
-def secure_origin(s):
-    u=urllib.parse.urlsplit(s)
-    return u.scheme=='https' and bool(u.hostname) and u.hostname not in ('localhost','127.0.0.1') and not u.username and not u.password and not u.path and not u.query and not u.fragment
-
-def ready():
-    if not KEY:return False
-    if MODE=='sandbox':return ORIGIN=='http://127.0.0.1:8765' and FRONT==ORIGIN and API=='http://127.0.0.1:8080'
-    return MODE=='live' and os.environ.get('PAYMENTS_LIVE_APPROVED')=='yes' and bool(PROFILE) and all(secure_origin(x) for x in (ORIGIN,FRONT,LINK_ORIGIN)) and 'sandbox' not in API.lower() and 'sandbox' not in LINK_ORIGIN.lower()
-
-def http(url,payload=None,headers=None):
-    class NoRedirect(urllib.request.HTTPRedirectHandler):
-        def redirect_request(self,*args,**kwargs):return None
-    req=urllib.request.Request(url,data=None if payload is None else json.dumps(payload).encode(),headers=headers or {},method='GET' if payload is None else 'POST')
-    try:
-        with urllib.request.build_opener(NoRedirect()).open(req,timeout=25) as r:return json.load(r)
-    except urllib.error.HTTPError as e:
-        try:
-            d=json.loads(e.read(8192)); detail=d.get('error',{}); code=detail.get('code','') if isinstance(detail,dict) else ''
-        except Exception:code=''
-        print('Upstream HTTP',e.code,'code',str(code)[:80],flush=True)
-        raise UpstreamProblem(f'تعذر الاتصال بخدمة الدفع أو الكتالوج (HTTP {e.code}). لا تكرر الدفع قبل مراجعة الطلب.',e.code) from None
-    except (OSError,ValueError):raise UpstreamProblem('تعذر الاتصال بخدمة الدفع أو الكتالوج. لا تكرر الدفع قبل مراجعة الطلب.') from None
-
-def hs(path,payload=None):return http(API+path,payload,{'api-key':KEY,'Content-Type':'application/json','Accept':'application/json'})
-def unpack(v):
-    if 'mapValue' in v:return {k:unpack(x) for k,x in v['mapValue'].get('fields',{}).items()}
-    if 'arrayValue' in v:return [unpack(x) for x in v['arrayValue'].get('values',[])]
-    if 'integerValue' in v:return int(v['integerValue'])
-    if 'doubleValue' in v:return Decimal(str(v['doubleValue']))
-    if 'stringValue' in v:return v['stringValue']
-    return None
-
-def minor(v):
-    try:
-        d=Decimal(str(v))*100
-        if not d.is_finite() or d!=d.to_integral_value() or not 1<=d<=10000000:return None
-        return int(d)
-    except (InvalidOperation,ValueError,TypeError):return None
-
-def catalog():
-    data=http(CATALOG);raw=unpack(data.get('fields',{}).get('products',{})) or []
-    def item(x):
-        if not isinstance(x,dict) or not isinstance(x.get('id'),str) or not ID.fullmatch(x['id']):raise Problem('كتالوج الخدمة غير صالح.')
-        return {'id':x['id'],'name':str(x.get('name',''))[:150],'amount':minor(x.get('price'))}
-    return [dict(item(p),options=[item(o) for o in (p.get('options') or [])]) for p in raw]
-
-def quote(service,option):
-    p=next((p for p in catalog() if p['id']==service),None)
-    if not p:raise Problem('الخدمة غير متاحة.')
-    o=next((o for o in p['options'] if o['id']==option),None)
-    if (p['options'] and not o) or (not p['options'] and option):raise Problem('الخيار غير متاح.')
-    amount=(o or p)['amount']
-    if amount is None:raise Problem('هذه الخدمة تحتاج تسعيرة قبل الدفع.')
-    return amount,p['name'],o['name'] if o else ''
-
-@contextlib.contextmanager
-def db():
-    c=sqlite3.connect(DB,timeout=30);c.row_factory=sqlite3.Row
-    try:
-        with c:
-            c.execute('CREATE TABLE IF NOT EXISTS orders (attempt TEXT PRIMARY KEY, token TEXT UNIQUE, details TEXT, amount INTEGER, payment_id TEXT UNIQUE, link TEXT, state TEXT, created INTEGER)')
-            yield c
-    finally:c.close()
-
-@contextlib.contextmanager
-def locked_order():
-    with db() as c:
-        c.execute('BEGIN IMMEDIATE');yield c
-
-def reload_order(attempt):
-    with db() as c:return c.execute('SELECT * FROM orders WHERE attempt=?',(attempt,)).fetchone()
-
-def status_url(row):return ORIGIN+'/payment-return?order='+row['token']
-
-def existing_response(row):
-    return {'url':status_url(row),'state':row['state'],'resume':True}
-
-
-def validate_link(link):
-    if not isinstance(link,str):raise Problem('رابط الدفع غير صالح.')
-    u=urllib.parse.urlsplit(link)
-    valid=f'{u.scheme}://{u.netloc}'==LINK_ORIGIN
-    if MODE=='sandbox':valid=u.scheme=='http' and u.hostname in ('localhost','127.0.0.1') and u.port==8080
-    if not valid or u.username or u.password or not u.path.startswith('/payment_link/'):raise Problem('عنوان رابط الدفع غير مطابق لإعدادات Hyperswitch.')
-    return link
-
-def create(body):
-    if not ready():raise Problem('خادم الدفع غير مفعّل.')
-    if not isinstance(body,dict):raise Problem('طلب غير صالح.')
-    clean={}
-    for k,n in {'service':80,'option':80,'name':100,'attempt':36}.items():
-        v=body.get(k,'')
-        if not isinstance(v,str) or len(v)>n:raise Problem('بيانات الطلب غير صالحة.')
-        clean[k]=v.strip()
-    if not ID.fullmatch(clean['service']) or (clean['option'] and not ID.fullmatch(clean['option'])) or not UUID.fullmatch(clean['attempt']) or not clean['name']:raise Problem('أكمل بيانات الطلب.')
-    expected=body.get('expectedAmount')
-    if type(expected) is not int:raise Problem('السعر غير صالح.')
-    clean['expectedAmount']=expected;attempt=clean['attempt']
-    # First inspect without holding the database lock during a network call.
-    row=reload_order(attempt)
-    if row:
-        if json.loads(row['details'])['request']!=clean:raise Problem('رقم الطلب مرتبط ببيانات أخرى.')
-        return existing_response(row)
-    amount,p,o=quote(clean['service'],clean['option'])
-    if amount!=expected:raise Problem('تغير السعر؛ حدّث الصفحة ثم راجعه.')
-    token=secrets.token_urlsafe(32);pid='pay_ss_'+attempt.replace('-','')
-    details=json.dumps({'request':clean,'product':p,'option':o},ensure_ascii=False)
-    with locked_order() as c:
-        row=c.execute('SELECT * FROM orders WHERE attempt=?',(attempt,)).fetchone()
-        if row:
-            if json.loads(row['details'])['request']!=clean:raise Problem('رقم الطلب مرتبط ببيانات أخرى.')
-            return existing_response(row)
-        c.execute('INSERT INTO orders VALUES (?,?,?,?,?,?,?,?)',(attempt,token,details,amount,pid,None,'creating',int(time.time())))
-    # Durable reservation is committed BEFORE the only upstream create call.
-    # If the response is lost, never repeat POST; reconcile this payment ID via GET.
-    payload={'payment_id':pid,'amount':amount,'currency':'SAR','capture_method':'automatic','payment_link':True,'confirm':False,'description':'SPEEDSTORE '+attempt,'return_url':ORIGIN+'/payment-return?order='+token,'session_expiry':900}
-    if PROFILE:payload['profile_id']=PROFILE
-    try:
-        d=hs('/payments',payload)
-        if not identity_matches(reload_order(attempt),d):raise Problem('رد إنشاء الدفع غير مطابق.')
-        link=extract_link(d)
-        if not link:raise Problem('لم يصل رابط الدفع.')
-    except (Problem, TypeError, AttributeError):
-        with db() as c:c.execute("UPDATE orders SET state='creation_uncertain' WHERE attempt=? AND state='creating'",(attempt,))
-        return existing_response(reload_order(attempt))
-    with db() as c:c.execute("UPDATE orders SET link=?,state=CASE WHEN state IN ('creating','creation_uncertain') THEN 'pending' ELSE state END WHERE attempt=?",(link,attempt))
-    return {'url':link,'state':'pending','resume':False}
-
-def identity_matches(row,d):
-    return isinstance(d,dict) and d.get('payment_id')==row['payment_id'] and type(d.get('amount')) is int and d['amount']==row['amount'] and d.get('currency')=='SAR'
-
-def extract_link(d):
-    x=d.get('payment_link')
-    if not isinstance(x,dict) or not x.get('link'):return None
-    try:return validate_link(x['link'])
-    except Problem:return None
-
-def verify(row):
-    # A previously confirmed, durably persisted payment need not depend on connectivity.
-    # This records confirmation at time of payment, not later refunds/chargebacks.
-    if row['state']=='verified_paid':return True,'succeeded'
-    d=hs('/payments/'+urllib.parse.quote(row['payment_id'],safe='')+'?force_sync=true')
-    if not identity_matches(row,d):return False,'mismatch'
-    status=str(d.get('status','unknown'))
-    good=(d.get('connector')=='checkout' and status=='succeeded' and type(d.get('amount_received')) is int and d['amount_received']==row['amount'])
-    link=extract_link(d)
-    with locked_order() as c:
-        latest=c.execute('SELECT * FROM orders WHERE attempt=?',(row['attempt'],)).fetchone()
-        if latest['state']=='verified_paid':return True,'succeeded'
-        if good:state='verified_paid'
-        elif status in ('failed','cancelled','canceled'):state='failed'
-        elif status=='succeeded':state='review_required'
-        elif status in ('requires_payment_method','requires_confirmation','requires_customer_action','processing','requires_capture','requires_merchant_action','partially_captured','partially_captured_and_capturable'):state='pending'
-        else:state=latest['state']
-        c.execute('UPDATE orders SET state=?,link=COALESCE(link,?) WHERE attempt=?',(state,link,row['attempt']))
-    return good,status
-
-STOP=threading.Event()
-
-def reconciliation_once():
-    # The worker checks GET only. Never create/confirm/capture or charge again.
-    # Use a bounded batch and skip previously verified and terminal orders.
-    now=int(time.time())
-    with db() as c:
-        c.execute('CREATE TABLE IF NOT EXISTS reconcile_schedule (attempt TEXT PRIMARY KEY, next_check INTEGER NOT NULL, tries INTEGER NOT NULL)')
-        rows=c.execute("""SELECT o.*, COALESCE(s.tries,0) AS tries FROM orders o
-            LEFT JOIN reconcile_schedule s ON s.attempt=o.attempt
-            WHERE o.state IN ('creating','creation_uncertain','pending','review_required')
-            AND o.created<=? AND COALESCE(s.next_check,0)<=?
-            ORDER BY COALESCE(s.next_check,0),o.created LIMIT 20""",(now-30,now)).fetchall()
-    for row in rows:
-        if STOP.is_set():break
-        try:verify(row)
-        except Exception:pass # outage or unavailable upstream; retain order and retry later
-        tries=min(row['tries']+1,12)
-        delay=min(1800,30*2**min(tries-1,6))
-        with db() as c:c.execute('INSERT INTO reconcile_schedule VALUES (?,?,?) ON CONFLICT(attempt) DO UPDATE SET next_check=excluded.next_check,tries=excluded.tries',(row['attempt'],int(time.time())+delay,tries))
-
-def reconciliation_worker():
-    while not STOP.is_set():
-        try:reconciliation_once()
-        except Exception:print('Reconciliation temporarily unavailable; will retry.',flush=True)
-        STOP.wait(15)
-
-def reference(row):return 'SS-'+row['attempt'].replace('-','').upper()
-def whatsapp(row):
-    d=json.loads(row['details']);r=d['request']
-    lines=['السلام عليكم، هذا طلب من SPEEDSTORE.', '*** اختبار فقط — لا توجد أموال حقيقية ***' if MODE=='sandbox' else 'حالة الدفع: تم التحقق من نجاح الدفع عبر Checkout.com', 'رقم الطلب: '+reference(row),'الخدمة: '+d['product']]
-    if d['option']:lines.append('الخيار: '+d['option'])
-    lines.extend([f"المبلغ: {Decimal(row['amount'])/100:.2f} ر.س",'الاسم: '+r['name'],'رقم عملية الدفع: '+row['payment_id']])
-    return 'https://wa.me/966533808064?'+urllib.parse.urlencode({'text':'\n'.join(lines)},quote_via=urllib.parse.quote)
-
-def page(title,details,action='',redirect='',retry=False,finished=''):
-    # redirect only to a URL generated from a verified row, never user supplied
-    js=''
-    if retry:js='<script>(()=>{let key="ss_retry_"+location.search;let n=0;try{n=Number(sessionStorage.getItem(key)||0);sessionStorage.setItem(key,String(n+1))}catch(e){}let t;const refresh=()=>{clearTimeout(t);location.reload()};window.addEventListener("online",refresh,{once:true});if(navigator.onLine)t=setTimeout(refresh,Math.min(60000,5000*2**Math.min(n,4)));})();</script>'
-    if redirect:js='<script>setTimeout(()=>location.replace('+json.dumps(redirect).replace('<','\\u003c')+'),1000)</script>'
-    return ('<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SPEEDSTORE PAY</title><style>body{background:#110b1a;color:#f3eafa;font:17px system-ui;padding:24px;display:grid;place-items:center;min-height:85vh}main{width:min(100%,560px);box-sizing:border-box;background:#21172e;border:1px solid #6a4e84;border-radius:18px;padding:28px}a{color:#d6b1ff;display:inline-block;margin:12px 0}a.btn{background:#c49aff;color:#21132e;padding:12px;border-radius:10px;text-decoration:none;font-weight:bold}small{color:#c49aff}p{line-height:1.8;overflow-wrap:anywhere}</style><main><small>SPEEDSTORE PAY'+(' | Sandbox' if MODE=='sandbox' else '')+'</small><h1>'+escape(title)+'</h1><p>'+escape(details)+'</p>'+action+'<br><a href="'+escape(FRONT+'/' if FRONT!=ORIGIN else '/',quote=True)+'">العودة للمتجر</a></main>'+js+'</html>').encode()
-
-class Handler(BaseHTTPRequestHandler):
-    def log_message(self,*args):pass
-    def respond(self,code,content,kind='text/html; charset=utf-8'):
-        self.send_response(code);self.send_header('Content-Type',kind);self.send_header('Content-Length',str(len(content)));self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Referrer-Policy','no-referrer')
-        if MODE=='live' and self.headers.get('Origin')==FRONT and secure_origin(FRONT):
-            self.send_header('Access-Control-Allow-Origin',FRONT);self.send_header('Vary','Origin');self.send_header('Access-Control-Allow-Headers','Content-Type');self.send_header('Access-Control-Allow-Methods','GET, POST, OPTIONS')
-        self.end_headers();self.wfile.write(content)
-    def j(self,code,obj):self.respond(code,json.dumps(obj,ensure_ascii=False).encode(),'application/json; charset=utf-8')
-    def host_ok(self):
-        return self.headers.get('Host') in ('127.0.0.1:8765',urllib.parse.urlsplit(ORIGIN).netloc) # reverse proxy must restrict Host and access
-    def do_OPTIONS(self):
-        if self.host_ok() and self.headers.get('Origin') in (FRONT,ORIGIN):return self.respond(204,b'')
-        return self.j(403,{'error':'طلب غير مسموح.'})
-    def do_POST(self):
-        if not self.host_ok() or self.headers.get('Origin') not in (FRONT,ORIGIN) or self.path not in ('/api/payments','/api/order-state'):return self.j(403,{'error':'طلب غير مسموح.'})
-        try:
-            n=int(self.headers.get('Content-Length','0'))
-            if not 0<n<=12000 or self.headers.get('Content-Type','').split(';')[0]!='application/json':raise Problem('طلب غير صالح.')
-            body=json.loads(self.rfile.read(n))
-            if self.path=='/api/order-state':
-                if not isinstance(body,dict) or not isinstance(body.get('attempt'),str) or not UUID.fullmatch(body['attempt']):raise Problem('طلب غير صالح.')
-                row=reload_order(body['attempt'])
-                if not row or json.loads(row['details'])['request']!=body:return self.j(404,{'error':'الطلب غير موجود.'})
-                return self.j(200,{'state':row['state']})
-            self.j(200,create(body))
-        except Problem as e:self.j(400,{'error':str(e)})
-        except Exception:self.j(500,{'error':'حدث خطأ أثناء تجهيز الطلب؛ لا تكرر الدفع قبل المراجعة.'})
-    def do_GET(self):
-        if not self.host_ok():return self.j(403,{'error':'طلب غير مسموح.'})
-        u=urllib.parse.urlsplit(self.path)
-        if u.path in ('/','/index.html','/checkout.html'):
-            file='checkout.html' if u.path=='/checkout.html' else 'index.html';return self.respond(200,(ROOT/file).read_bytes())
-        if u.path=='/api/catalog':
-            try:return self.j(200,{'products':catalog(),'ready':bool(ready()),'mode':MODE})
-            except Problem as e:return self.j(503,{'error':str(e)})
-        if u.path=='/payment-return':
-            token=urllib.parse.parse_qs(u.query).get('order',[''])[0]
-            if not ready() or not TOKEN.fullmatch(token):return self.respond(400,page('طلب غير صالح','لم يتم تأكيد أي دفع.'))
-            with db() as c:row=c.execute('SELECT * FROM orders WHERE token=?',(token,)).fetchone()
-            if not row:return self.respond(404,page('الطلب غير موجود','لم يتم تأكيد أي دفع.'))
-            try:good,status=verify(row)
-            except (Problem,TypeError,AttributeError):good,status=False,'unavailable'
-            row=reload_order(row['attempt'])
-            if good and row['state']=='verified_paid':
-                url=whatsapp(row)
-                return self.respond(200,page('تم التحقق من الدفع'+(' التجريبي' if MODE=='sandbox' else ''),'رقم الطلب: '+reference(row)+' — ستفتح رسالة واتساب جاهزة، اضغط إرسال داخل واتساب.', '<a class="btn" href="'+escape(url,quote=True)+'">فتح واتساب وإرسال الطلب</a>',url))
-            if status in ('failed','cancelled','canceled') and row['state']=='failed':
-                return self.respond(200,page('الدفع غير ناجح','رقم الطلب: '+reference(row)+' — لا تعاود الدفع إذا ظهر خصم في حسابك. تواصل مع المتجر للمراجعة.', '<a class="btn" href="">إعادة التحقق</a>'))
-            action='<a class="btn" href="">إعادة التحقق الآن</a>'
-            if status in ('requires_payment_method','requires_confirmation') and row['link'] and row['state']=='pending':
-                try:link=validate_link(row['link']);action+='<br><a class="btn" href="'+escape(link,quote=True)+'">متابعة نفس عملية الدفع</a>'
-                except Problem:pass
-            return self.respond(200,page('جاري التحقق من حالة الدفع','رقم الطلب: '+reference(row)+' — قد يكون الاتصال منقطعًا أو الدفع لم يكتمل. نعيد التحقق تلقائيًا؛ لا تدفع مرة أخرى. الحالة: '+status,action,retry=True))
-        self.j(404,{'error':'Not found'})
-
-if __name__=='__main__':
-    if MODE not in ('sandbox','live'):raise SystemExit('Invalid PAY_MODE')
-    if len(sys.argv)>1 and sys.argv[1]=='orders':
-        with db() as c:
-            for row in c.execute('SELECT * FROM orders ORDER BY created DESC'):
-                print(reference(row),row['state'],f"{Decimal(row['amount'])/100:.2f} SAR",row['payment_id'])
-        raise SystemExit()
-    if not KEY:KEY=getpass.getpass('Hyperswitch merchant API key (not Checkout.com): ').strip()
-    if not PROFILE:PROFILE=input('Hyperswitch profile ID (Enter if default): ').strip()
-    if PROFILE and not ID.fullmatch(PROFILE):raise SystemExit('Invalid profile ID')
-    if not ready():raise SystemExit('Payment configuration not enabled or invalid.')
-    with db():pass
-    try:server=ThreadingHTTPServer(('127.0.0.1',8765),Handler)
-    except OSError:raise SystemExit('Port 8765 is in use. Close the old START window.')
-    print('SPEEDSTORE PAY | '+MODE+' | '+ORIGIN,flush=True)
-    worker=threading.Thread(target=reconciliation_worker,daemon=True,name='payment-reconciliation');worker.start()
-    if MODE=='sandbox' and os.environ.get('PAY_NO_BROWSER')!='1':webbrowser.open(ORIGIN)
-    try:server.serve_forever()
-    except KeyboardInterrupt:pass
-    finally:STOP.set();server.server_close()
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SPEEDSTORE PAY | إتمام الطلب</title><style>
+:root{color-scheme:dark;--purple:#c49aff;--panel:#1a1425;--border:#40314f}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#231631,#0b0911 65%);color:#f4effb;font:16px/1.65 system-ui,sans-serif;min-height:100vh}header,main{max-width:1000px;margin:auto;padding:22px}header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}header strong{letter-spacing:1px;color:var(--purple)}a{color:var(--purple)}main h1{margin:12px 0 0;font-size:clamp(27px,5vw,42px)}.sub{color:#bfb2d1;margin-top:5px}.steps{display:flex;gap:10px;color:#bfb2d1;font-size:13px;margin:23px 0}.steps b{color:var(--purple)}.layout{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;align-items:start}.card{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:24px}h2{margin:0 0 20px;font-size:20px}label{display:block;margin:15px 0;color:#d9cce9}input,select,textarea{font:inherit;display:block;width:100%;padding:11px;margin-top:5px;border:1px solid #524367;border-radius:9px;background:#100c18;color:white}button,.btn{background:var(--purple);color:#1a1025;border:0;border-radius:12px;font:bold 17px system-ui;padding:15px;width:100%;cursor:pointer;text-decoration:none;display:block;text-align:center}button:disabled{opacity:.45;cursor:not-allowed}.price{font-size:32px;font-weight:800;color:var(--purple)}.line{border-top:1px solid var(--border);padding-top:16px}.muted{font-size:13px;color:#bfb2d1}.notice{background:#261d35;border:1px solid #53416a;padding:12px;border-radius:10px;font-size:14px;margin-bottom:15px}.error{color:#ffb6b6}.method{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.method span{border:1px solid #524367;border-radius:7px;padding:4px 10px;font-size:13px} [hidden]{display:none!important}@media(max-width:720px){.layout{grid-template-columns:1fr}main,header{padding:16px}.card{padding:18px}}
+</style></head><body><header><strong>SPEEDSTORE PAY</strong><a href="index.html">العودة للمتجر</a></header><main><p class="steps"><b>١. بيانات الطلب</b> ← ٢. الدفع الآمن ← ٣. تأكيد الطلب</p><h1>إتمام طلبك</h1><p class="sub">اكتب اسمك فقط، ثم انتقل إلى الدفع الآمن. بعد تأكيد الدفع سنفتح لك واتساب برسالة الطلب لتنسيق التفاصيل.</p><div id="mode" class="notice" role="status">جارٍ الاتصال بخدمة الدفع…</div><div id="resumePanel" class="notice" hidden><strong>يوجد طلب محفوظ</strong><p id="resumeText">لا تكرر الدفع. تابع حالة طلبك السابق من هنا.</p><button type="button" id="resumeBtn">متابعة الطلب السابق</button><button type="button" id="newBtn" hidden style="margin-top:8px">بدء طلب جديد بعد المراجعة</button></div><div class="layout"><form id="order" class="card"><h2>تفاصيل الطلب</h2><label>الخدمة<select name="service" required><option value="">جارٍ تحميل الخدمات…</option></select></label><label id="optionRow" hidden>الخيار<select name="option"></select></label><label>الاسم<input name="name" required maxlength="100" autocomplete="name" placeholder="اكتب اسمك"></label><p id="err" class="error" role="alert" hidden></p><button id="pay" disabled>انتقل للدفع الآمن</button><a id="quote" class="btn" href="index.html?quote=1" hidden>اطلب تسعيرة بدل الدفع</a></form><aside class="card"><h2>ملخص الطلب</h2><div id="product">اختر الخدمة</div><div id="choice" class="muted"></div><p class="line">الإجمالي</p><div class="price" id="total">—</div><div class="method"><span>Visa</span><span>Mastercard</span></div><p class="muted">تدخل بيانات البطاقة في صفحة Hyperswitch المستضافة، وليس في هذا النموذج. التحقق النهائي يتم على الخادم عبر Checkout.com.</p></aside></div></main><script>
+// اترك العنوان فارغًا للاختبار على نفس الخادم. عند النشر الخارجي ضع أصل خادم الدفع HTTPS المعتمد هنا.
+const PAYMENT_API = "";
+const local = ['127.0.0.1','localhost'].includes(location.hostname) && location.port === '8765';
+const api = PAYMENT_API.replace(/\/$/,'') || (local ? location.origin : '');
+const form=document.getElementById('order'), f=form.elements, pay=document.getElementById('pay'), err=document.getElementById('err'), mode=document.getElementById('mode'), quote=document.getElementById('quote');
+const params=new URLSearchParams(location.search); let products=[], active=false, busy=false, current=null;
+const money=n=>new Intl.NumberFormat('ar-SA',{style:'currency',currency:'SAR'}).format(n/100);
+function notify(s){err.textContent=s;err.hidden=!s}
+function render(){let p=products.find(x=>x.id===f.service.value), o=p?.options.find(x=>x.id===f.option.value);current=p&&(!p.options.length||o)?{p,o,amount:(o||p).amount}:null;document.getElementById('product').textContent=p?.name||'اختر الخدمة';document.getElementById('choice').textContent=o?.name||'';document.getElementById('total').textContent=current?(current.amount===null?'حسب الطلب':money(current.amount)):'—';quote.hidden=!(current&&current.amount===null);quote.href='index.html?'+new URLSearchParams({quote:'1',service:p?.id||'',option:o?.id||''});pay.hidden=!quote.hidden;pay.disabled=!active||busy||!!savedOrder()||!current||!(current.amount>0);}
+function options(selected=''){let p=products.find(x=>x.id===f.service.value), opts=p?.options||[];f.option.replaceChildren(...opts.map(x=>new Option(x.name,x.id)));f.option.required=opts.length>0;document.getElementById('optionRow').hidden=!opts.length;if(opts.some(x=>x.id===selected))f.option.value=selected;render()}
+f.service.addEventListener('change',()=>options());f.option.addEventListener('change',render);form.addEventListener('input',()=>notify(''));
+function unpack(v){if(v?.mapValue)return Object.fromEntries(Object.entries(v.mapValue.fields||{}).map(([k,x])=>[k,unpack(x)]));if(v?.arrayValue)return (v.arrayValue.values||[]).map(unpack);if(v?.integerValue!==undefined)return Number(v.integerValue);if(v?.doubleValue!==undefined)return Number(v.doubleValue);if(v?.stringValue!==undefined)return v.stringValue;return null}
+const minor=v=>typeof v==='number'&&Number.isFinite(v)&&v>0&&Math.abs(v*100-Math.round(v*100))<1e-6?Math.round(v*100):null;
+async function start(){try{if(api){const res=await fetch(api+'/api/catalog',{cache:'no-store'});if(!res.ok)throw Error('تعذر تحميل كتالوج خادم الدفع');const d=await res.json();products=d.products;active=d.ready;mode.textContent=d.mode==='sandbox'?'وضع الاختبار عبر Checkout.com — لا تُخصم أموال حقيقية.':active?'الدفع الإلكتروني متاح.':'خدمة الدفع غير مفعّلة.';}else{const res=await fetch('https://firestore.googleapis.com/v1/projects/thr-store/databases/(default)/documents/speedstore/catalog');if(!res.ok)throw Error('تعذر تحميل الكتالوج.');const d=await res.json();products=(unpack(d.fields?.products)||[]).map(p=>({id:p.id,name:p.name,amount:minor(p.price),options:(p.options||[]).map(o=>({id:o.id,name:o.name,amount:minor(o.price)}))}));mode.textContent='صفحة الطلب جاهزة؛ خادم الدفع لم يُربط بهذا الموقع بعد.';}f.service.replaceChildren(new Option('اختر الخدمة',''),...products.map(p=>new Option(p.name,p.id)));if(products.some(p=>p.id===params.get('service')))f.service.value=params.get('service');options(params.get('option')||'');}catch(e){mode.textContent='لم نتمكن من الاتصال بخدمة الطلبات. تأكد من تشغيل الخادم وكتالوج المتجر.';notify(e.message);}}
+// Keep one outstanding checkout per browser origin until its status is known.
+const storageKey='speedstore_pending_order_v5';
+const resumePanel=document.getElementById('resumePanel'),resumeBtn=document.getElementById('resumeBtn'),newBtn=document.getElementById('newBtn'),resumeText=document.getElementById('resumeText');
+let resolved=false;
+function savedOrder(){try{return JSON.parse(localStorage.getItem(storageKey)||'null')}catch(e){return null}}
+function saveOrder(body){localStorage.setItem(storageKey,JSON.stringify(body));if(savedOrder()?.attempt!==body.attempt)throw Error('تعذر حفظ رقم الطلب في هذا المتصفح؛ لا يمكن بدء الدفع بأمان.');}
+function resumeUI(){const saved=savedOrder();resumePanel.hidden=!saved;resumeBtn.disabled=busy||!api;newBtn.hidden=!resolved||!saved;form.querySelectorAll('input,select').forEach(el=>el.disabled=!!saved);if(saved)resumeText.textContent='رقم الطلب: SS-'+saved.attempt.replaceAll('-','').toUpperCase()+' — '+(resolved?'تم حسم الحالة. يمكنك مراجعة الطلب قبل إنشاء طلب جديد.':'لا تنشئ دفعة ثانية. تابع نفس الطلب بعد عودة الإنترنت.');render();}
+async function send(body,resuming){if(!api||busy)return;busy=true;notify('');resumeUI();pay.textContent='جارٍ تجهيز صفحة الدفع…';try{const res=await fetch(api+'/api/payments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});const data=await res.json();if(!res.ok)throw Error(data.error||'تعذر الاتصال بالخادم');const url=new URL(data.url);if(url.protocol!=='https:'&&!(local&&url.protocol==='http:'&&['localhost','127.0.0.1'].includes(url.hostname)))throw Error('رابط الدفع غير آمن');if(data.resume&&!['verified_paid','failed'].includes(data.state)&&resuming){location.assign(url.href);return}if(data.resume&&['verified_paid','failed'].includes(data.state)){resolved=true;resumeText.textContent='تم حسم الطلب السابق. راجعه قبل إنشاء طلب جديد.';if(resuming){window.location.assign(url.href);return}}location.assign(url.href);}catch(e){notify('لم يكتمل الاتصال. رقم الطلب محفوظ؛ اضغط متابعة الطلب السابق بعد عودة الإنترنت. '+e.message);}finally{busy=false;resumeUI();pay.textContent='انتقل للدفع الآمن';}}
+async function submitOnce(){if(!active||busy||!current||!(current.amount>0))return;const run=async()=>{const prior=savedOrder();if(prior){resumeUI();return;}const body={service:f.service.value,option:f.option.value,name:f.name.value.trim(),expectedAmount:current.amount,attempt:crypto.randomUUID()};try{saveOrder(body)}catch(e){notify('تعذر حفظ رقم الطلب، لن نبدأ الدفع.');return}await send(body,false)};if(navigator.locks)await navigator.locks.request(storageKey,run);else await run();}
+form.addEventListener('submit',e=>{e.preventDefault();submitOnce().catch(()=>notify('تعذر تجهيز الطلب بأمان.'))});
+resumeBtn.onclick=()=>{const prior=savedOrder();if(prior)send(prior,true)};
+newBtn.onclick=()=>{if(resolved&&confirm('هل راجعت نتيجة الطلب السابق؟ سيتم إنشاء طلب مستقل فقط عند الضغط على الدفع مرة أخرى.')){localStorage.removeItem(storageKey);resolved=false;resumeUI();}};
+// Check existing state without ever submitting a new payment; this endpoint is read-only.
+async function checkSaved(){const prior=savedOrder();if(!prior||!api||busy)return;try{const r=await fetch(api+'/api/order-state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(prior),signal:AbortSignal.timeout(15000)});if(r.ok){const d=await r.json();resolved=['verified_paid','failed'].includes(d.state);resumeUI();}}catch(e){}}
+window.addEventListener('online',()=>{if(!active)start();checkSaved()});window.addEventListener('storage',e=>{if(e.key===storageKey){resolved=false;resumeUI();checkSaved()}});resumeUI();start().finally(()=>{resumeUI();checkSaved()});
+</script></body></html>
